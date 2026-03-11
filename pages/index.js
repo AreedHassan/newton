@@ -857,17 +857,19 @@ export default function App() {
     try {
       let sessionId = currentSession?.id;
       if (!sessionId) {
-        const sr = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ action: 'create' })
-        });
-        const sd = await sr.json();
-        if (sd.session) {
-          setSessions(p => [sd.session, ...p]);
-          setCurrentSession(sd.session);
-          sessionId = sd.session.id;
-        }
+        try {
+          const sr = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ action: 'create' })
+          });
+          const sd = await sr.json();
+          if (sd.session) {
+            setCurrentSession(sd.session);
+            setSessions(p => [sd.session, ...p]);
+            sessionId = sd.session.id;
+          }
+        } catch {}
       }
 
       const r = await fetch('/api/chat', {
@@ -900,7 +902,8 @@ export default function App() {
   }
 
   function logout() {
-    localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr');
+    if (!confirm('logout karna hai? sure hai?')) return;
+    localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin');
     setToken(null); setUser(null); setScreen('login'); setMsgs([]); setSessions([]); setCurrentSession(null);
   }
 
@@ -1019,7 +1022,6 @@ export default function App() {
             <button className="hbtn" onClick={() => setShowSessions(p => !p)} title="chats">💬</button>
             <button className={`hbtn ${memFlash ? 'flashing' : ''}`} onClick={() => openSheet(sheet === 'memory' ? null : 'memory')} title="what newton remembers about you">🧠</button>
             {isAdmin && <button className="hbtn" onClick={() => openSheet(sheet === 'story' ? null : 'story')} title="shared story">📖</button>}
-            <button className="hbtn" onClick={logout} title="logout">↩</button>
           </div>
         </div>
 
@@ -1101,6 +1103,9 @@ export default function App() {
                 </div>
               ))}
             </div>
+            <button onClick={logout} style={{ margin: '12px 16px 16px', padding: '10px', background: 'rgba(255,60,60,0.1)', border: '1px solid rgba(255,60,60,0.2)', borderRadius: '10px', color: '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer', width: 'calc(100% - 32px)', textAlign: 'center' }}>
+              logout
+            </button>
           </div>
         </>
       )}
