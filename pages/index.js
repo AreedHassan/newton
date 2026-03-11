@@ -1080,7 +1080,7 @@ export default function App() {
                         {s.name || <span style={{color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>naming...</span>}
                       </div>
                     )}
-                    <div className="sess-item-meta">{new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                    <div className="sess-item-meta" suppressHydrationWarning>{s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</div>
                   </div>
                   <button className="sess-delete" onClick={e => { e.stopPropagation(); deleteSession(s.id); }}>🗑</button>
                 </div>
