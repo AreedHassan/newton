@@ -1,13 +1,13 @@
 import { getRequests, removeRequest, saveInvite, getUsers } from '../../lib/db';
 import { v4 as uuid } from 'uuid';
-import nodemailer from 'nodemailer';
 
 const MAIL_USER = 'supportnewton@gmail.com';
 const MAIL_PASS = 'eice tgqe spfy zcfu';
 
 async function sendInviteEmail(to, name, link) {
   try {
-    const transporter = nodemailer.createTransport({
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
       service: 'gmail',
       auth: { user: MAIL_USER, pass: MAIL_PASS }
     });
@@ -24,11 +24,10 @@ async function sendInviteEmail(to, name, link) {
             admin ne approve kar diya. andar aa ja. yeh link 48 ghante valid hai, baad mein mat rona.
           </p>
           <a href="${link}" style="display:inline-block;padding:14px 28px;background:#fff;color:#000;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none">
-            join newton →
+            join newton
           </a>
           <p style="color:#333;font-size:11px;margin:28px 0 0;line-height:1.6">
-            link kisi ko share mat karna. yeh sirf tere liye hai.<br/>
-            koi issue ho toh seedha admin se baat kar.
+            link kisi ko share mat karna. yeh sirf tere liye hai.
           </p>
         </div>
       `
@@ -49,38 +48,44 @@ function unwrap(val) {
 }
 
 export default async function handler(req, res) {
-  const key = req.headers['x-admin-key'];
-  if (key !== 'areed@areed') return res.status(401).json({ error: 'nope' });
+  try {
+    const key = req.headers['x-admin-key'];
+    if (key !== 'areed@areed') return res.status(401).json({ error: 'nope' });
 
-  if (req.method === 'GET') {
-    const [rawRequests, rawUsers] = await Promise.all([getRequests(), getUsers()]);
-    const requests = unwrap(rawRequests) || [];
-    const users = unwrap(rawUsers) || {};
-    return res.status(200).json({ requests: Array.isArray(requests) ? requests : [], users: Object.values(users) });
-  }
-
-  if (req.method === 'POST') {
-    const { action, email, name } = req.body;
-
-    if (action === 'approve') {
-      const token = uuid();
-      const expiresAt = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
-      await saveInvite(token, { email, name, expiresAt });
-      await removeRequest(email);
-
-      const site = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      const link = `${site}/invite/${token}`;
-
-      const emailSent = await sendInviteEmail(email, name, link);
-
-      return res.status(200).json({ ok: true, link, emailSent });
+    if (req.method === 'GET') {
+      const [rawRequests, rawUsers] = await Promise.all([getRequests(), getUsers()]);
+      const requests = unwrap(rawRequests) || [];
+      const users = unwrap(rawUsers) || {};
+      return res.status(200).json({
+        requests: Array.isArray(requests) ? requests : [],
+        users: Object.values(users)
+      });
     }
 
-    if (action === 'reject') {
-      await removeRequest(email);
-      return res.status(200).json({ ok: true });
-    }
-  }
+    if (req.method === 'POST') {
+      const { action, email, name } = req.body;
 
-  return res.status(405).end();
+      if (action === 'approve') {
+        const token = uuid();
+        const expiresAt = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+        await saveInvite(token, { email, name, expiresAt });
+        await removeRequest(email);
+        const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://asknewton.vercel.app';
+        const link = `${site}/invite/${token}`;
+        let emailSent = false;
+        try { emailSent = await sendInviteEmail(email, name, link); } catch (e) { console.error(e); }
+        return res.status(200).json({ ok: true, link, emailSent });
+      }
+
+      if (action === 'reject') {
+        await removeRequest(email);
+        return res.status(200).json({ ok: true });
+      }
+    }
+
+    return res.status(405).end();
+  } catch (e) {
+    console.error('admin error:', e);
+    return res.status(500).json({ error: e.message });
+  }
 }
