@@ -18,7 +18,7 @@ export default function Admin() {
       if (!r.ok) return false;
       const d = await r.json();
       setRequests(d.requests || []);
-      setUsers(Object.values(d.users || {}));
+      setUsers(d.users || []);
       return true;
     } catch (e) {
       console.error(e);
@@ -69,8 +69,8 @@ export default function Admin() {
     meta: { fontSize: '12px', color: '#555', marginTop: '2px' },
     approveBtn: { padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: 'rgba(50,200,100,0.15)', color: '#4ade80', border: '1px solid rgba(50,200,100,0.2)' },
     rejectBtn: { padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: 'rgba(200,60,60,0.1)', color: '#f87171', border: '1px solid rgba(200,60,60,0.15)' },
-    label: { fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#555', margin: '28px 0 10px' },
-    status: { background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 16px', marginTop: '16px', fontSize: '13px', color: '#4ade80', wordBreak: 'break-all', lineHeight: '1.6' },
+    label: { fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#555', margin: '28px 0 10px', display: 'block' },
+    statusBox: { background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 16px', marginTop: '16px', fontSize: '13px', color: '#4ade80', wordBreak: 'break-all', lineHeight: '1.6' },
   };
 
   if (!authed) return (
@@ -96,10 +96,10 @@ export default function Admin() {
         <div style={s.wrap}>
           <h1 style={s.h1}>admin</h1>
 
-          <div style={s.label}>pending requests ({requests.length})</div>
-          {requests.length === 0 && <div style={{ color: '#333', fontSize: 14 }}>no pending requests</div>}
-          {requests.map(r => (
-            <div style={s.card} key={r.email}>
+          <span style={s.label}>pending requests ({requests.length})</span>
+          {requests.length === 0 && <div style={{ color: '#333', fontSize: 14, paddingBottom: 8 }}>no pending requests</div>}
+          {requests.map((r, i) => (
+            <div style={s.card} key={i}>
               <div>
                 <div style={s.name}>{r.name}</div>
                 <div style={s.meta}>{r.email}</div>
@@ -111,9 +111,10 @@ export default function Admin() {
             </div>
           ))}
 
-          <div style={s.label}>members ({users.length})</div>
-          {users.map(u => (
-            <div style={s.card} key={u.email}>
+          <span style={s.label}>members ({users.length})</span>
+          {users.length === 0 && <div style={{ color: '#333', fontSize: 14, paddingBottom: 8 }}>no members yet</div>}
+          {users.map((u, i) => (
+            <div style={s.card} key={i}>
               <div>
                 <div style={s.name}>{u.name}</div>
                 <div style={s.meta}>{u.email}</div>
@@ -122,7 +123,7 @@ export default function Admin() {
           ))}
 
           {(status || inviteLink) && (
-            <div style={s.status}>
+            <div style={s.statusBox}>
               {status}
               {inviteLink && <div style={{ marginTop: 6, fontSize: 12, color: '#a3a3a3' }}>invite link: {inviteLink}</div>}
             </div>
