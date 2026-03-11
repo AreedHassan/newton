@@ -20,7 +20,7 @@ async function maybeSummarize(userName) {
       ? `existing profile:\n${existingProfile}\n\nnew facts:\n${facts.map(f => `- ${f}`).join('\n')}`
       : facts.map(f => `- ${f}`).join('\n');
     const res = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
       max_tokens: 300,
       temperature: 0.3
@@ -47,7 +47,7 @@ async function maybeNameSession(userName, sessionId, messages) {
     if (!session || session.name) return; // already named
 
     const res = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
       max_tokens: 20,
       temperature: 1.1
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: NEWTON_SYSTEM_PROMPT(memory, story, user.name) },
         ...recentHistory,
