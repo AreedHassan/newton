@@ -2,6 +2,67 @@
 import { useState } from 'react';
 import Head from 'next/head';
 
+const S = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #050505; color: #e0e0e0; font-family: -apple-system, sans-serif; min-height: 100vh; }
+
+  .body { background: #050505; min-height: 100vh; padding: 32px 20px; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 28px; }
+
+  .field-input {
+    width: 100%; padding: 12px 14px;
+    background: #0a0a0a; border: 1px solid #1e1e1e;
+    border-radius: 10px; color: #e0e0e0; font-size: 15px;
+    outline: none; margin-bottom: 12px;
+  }
+  .btn {
+    padding: 11px 20px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    background: #e0e0e0; color: #000; width: 100%;
+  }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  .label {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #555;
+    margin: 28px 0 10px; display: block;
+  }
+  .card {
+    background: #0e0e0e; border: 1px solid #1a1a1a;
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 8px;
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .card-name { font-size: 15px; font-weight: 500; }
+  .card-meta { font-size: 12px; color: #555; margin-top: 2px; }
+  .card-actions { display: flex; gap: 6px; }
+
+  .approve-btn {
+    padding: 7px 14px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+    background: rgba(50,200,100,0.15); color: #4ade80;
+    border: 1px solid rgba(50,200,100,0.2);
+  }
+  .reject-btn {
+    padding: 7px 14px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+    background: rgba(200,60,60,0.1); color: #f87171;
+    border: 1px solid rgba(200,60,60,0.15);
+  }
+
+  .empty { color: #333; font-size: 14px; padding-bottom: 8px; }
+  .err { color: #f87171; margin-top: 10px; font-size: 13px; }
+
+  .status-box {
+    background: #0d1a0d; border: 1px solid #1a3a1a;
+    border-radius: 10px; padding: 12px 16px; margin-top: 16px;
+    font-size: 13px; color: #4ade80;
+    word-break: break-all; line-height: 1.6;
+  }
+  .invite-link { margin-top: 6px; font-size: 12px; color: #a3a3a3; }
+`;
+
 export default function Admin() {
   const [key, setKey] = useState('');
   const [authed, setAuthed] = useState(false);
@@ -58,31 +119,17 @@ export default function Admin() {
     }
   }
 
-  const s = {
-    body: { background: '#050505', color: '#e0e0e0', fontFamily: '-apple-system, sans-serif', minHeight: '100vh', padding: '32px 20px' },
-    wrap: { maxWidth: '560px', margin: '0 auto' },
-    h1: { fontSize: '28px', fontWeight: '700', marginBottom: '28px' },
-    input: { width: '100%', padding: '12px 14px', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '10px', color: '#e0e0e0', fontSize: '15px', outline: 'none', marginBottom: '12px', boxSizing: 'border-box' },
-    btn: { padding: '11px 20px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', background: '#e0e0e0', color: '#000', width: '100%' },
-    card: { background: '#0e0e0e', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
-    name: { fontSize: '15px', fontWeight: '500' },
-    meta: { fontSize: '12px', color: '#555', marginTop: '2px' },
-    approveBtn: { padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: 'rgba(50,200,100,0.15)', color: '#4ade80', border: '1px solid rgba(50,200,100,0.2)' },
-    rejectBtn: { padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: 'rgba(200,60,60,0.1)', color: '#f87171', border: '1px solid rgba(200,60,60,0.15)' },
-    label: { fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#555', margin: '28px 0 10px', display: 'block' },
-    statusBox: { background: '#0d1a0d', border: '1px solid #1a3a1a', borderRadius: '10px', padding: '12px 16px', marginTop: '16px', fontSize: '13px', color: '#4ade80', wordBreak: 'break-all', lineHeight: '1.6' },
-  };
-
   if (!authed) return (
     <>
       <Head><title>newton admin</title></Head>
-      <div style={s.body}>
-        <div style={s.wrap}>
-          <h1 style={s.h1}>admin</h1>
+      <style>{S}</style>
+      <div className="body">
+        <div className="wrap">
+          <h1>admin</h1>
           <form onSubmit={auth}>
-            <input style={s.input} type="password" value={key} onChange={e => setKey(e.target.value)} placeholder="admin password" />
-            <button style={s.btn} type="submit" disabled={loading}>{loading ? '...' : 'enter'}</button>
-            {err && <div style={{ color: '#f87171', marginTop: 10, fontSize: 13 }}>{err}</div>}
+            <input className="field-input" type="password" value={key} onChange={e => setKey(e.target.value)} placeholder="admin password" />
+            <button className="btn" type="submit" disabled={loading}>{loading ? '...' : 'enter'}</button>
+            {err && <div className="err">{err}</div>}
           </form>
         </div>
       </div>
@@ -92,40 +139,41 @@ export default function Admin() {
   return (
     <>
       <Head><title>newton admin</title></Head>
-      <div style={s.body}>
-        <div style={s.wrap}>
-          <h1 style={s.h1}>admin</h1>
+      <style>{S}</style>
+      <div className="body">
+        <div className="wrap">
+          <h1>admin</h1>
 
-          <span style={s.label}>pending requests ({requests.length})</span>
-          {requests.length === 0 && <div style={{ color: '#333', fontSize: 14, paddingBottom: 8 }}>no pending requests</div>}
+          <span className="label">pending requests ({requests.length})</span>
+          {requests.length === 0 && <div className="empty">no pending requests</div>}
           {requests.map((r, i) => (
-            <div style={s.card} key={i}>
+            <div className="card" key={i}>
               <div>
-                <div style={s.name}>{r.name}</div>
-                <div style={s.meta}>{r.email}</div>
+                <div className="card-name">{r.name}</div>
+                <div className="card-meta">{r.email}</div>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button style={s.approveBtn} onClick={() => act('approve', r.email, r.name)}>approve</button>
-                <button style={s.rejectBtn} onClick={() => act('reject', r.email, r.name)}>reject</button>
+              <div className="card-actions">
+                <button className="approve-btn" onClick={() => act('approve', r.email, r.name)}>approve</button>
+                <button className="reject-btn" onClick={() => act('reject', r.email, r.name)}>reject</button>
               </div>
             </div>
           ))}
 
-          <span style={s.label}>members ({users.length})</span>
-          {users.length === 0 && <div style={{ color: '#333', fontSize: 14, paddingBottom: 8 }}>no members yet</div>}
+          <span className="label">members ({users.length})</span>
+          {users.length === 0 && <div className="empty">no members yet</div>}
           {users.map((u, i) => (
-            <div style={s.card} key={i}>
+            <div className="card" key={i}>
               <div>
-                <div style={s.name}>{u.name}</div>
-                <div style={s.meta}>{u.email}</div>
+                <div className="card-name">{u.name}</div>
+                <div className="card-meta">{u.email}</div>
               </div>
             </div>
           ))}
 
           {(status || inviteLink) && (
-            <div style={s.statusBox}>
+            <div className="status-box">
               {status}
-              {inviteLink && <div style={{ marginTop: 6, fontSize: 12, color: '#a3a3a3' }}>invite link: {inviteLink}</div>}
+              {inviteLink && <div className="invite-link">invite link: {inviteLink}</div>}
             </div>
           )}
         </div>
