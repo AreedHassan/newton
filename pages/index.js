@@ -855,10 +855,25 @@ export default function App() {
     setMsgs(p => [...p, userMsg]);
 
     try {
+      let sessionId = currentSession?.id;
+      if (!sessionId) {
+        const sr = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: 'create' })
+        });
+        const sd = await sr.json();
+        if (sd.session) {
+          setSessions(p => [sd.session, ...p]);
+          setCurrentSession(sd.session);
+          sessionId = sd.session.id;
+        }
+      }
+
       const r = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: msg, sessionId: currentSession?.id })
+        body: JSON.stringify({ message: msg, sessionId })
       });
       const d = await r.json();
       if (d.response) {
