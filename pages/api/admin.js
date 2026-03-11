@@ -1,4 +1,3 @@
-// pages/api/admin.js
 import { getRequests, removeRequest, saveInvite, getUsers } from '../../lib/db';
 import { v4 as uuid } from 'uuid';
 import nodemailer from 'nodemailer';
@@ -41,13 +40,23 @@ async function sendInviteEmail(to, name, link) {
   }
 }
 
+function unwrap(val) {
+  if (!val) return val;
+  if (val?.value !== undefined) {
+    try { return JSON.parse(val.value); } catch { return val.value; }
+  }
+  return val;
+}
+
 export default async function handler(req, res) {
   const key = req.headers['x-admin-key'];
   if (key !== 'areed@areed') return res.status(401).json({ error: 'nope' });
 
   if (req.method === 'GET') {
-    const [requests, users] = await Promise.all([getRequests(), getUsers()]);
-    return res.status(200).json({ requests, users: Object.values(users) });
+    const [rawRequests, rawUsers] = await Promise.all([getRequests(), getUsers()]);
+    const requests = unwrap(rawRequests) || [];
+    const users = unwrap(rawUsers) || {};
+    return res.status(200).json({ requests: Array.isArray(requests) ? requests : [], users: Object.values(users) });
   }
 
   if (req.method === 'POST') {
