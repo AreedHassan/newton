@@ -7,39 +7,31 @@ import {
 } from '../../lib/db';
 import { NEWTON_SYSTEM_PROMPT, SUMMARIZE_PROMPT, SESSION_NAME_PROMPT, extractUpdates, getError } from '../../lib/newton';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free';
 
-async function geminiChat(systemPrompt, messages, maxTokens = 1024, temperature = 1.0) {
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
-
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents,
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      temperature
-    },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-    ]
-  };
-
-  const res = await fetch(GEMINI_URL, {
+async function orChat(systemPrompt, messages, maxTokens = 1024, temperature = 1.0) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://asknewton.vercel.app',
+      'X-Title': 'newton'
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+      max_tokens: maxTokens,
+      temperature
+    })
   });
-
   const data = await res.json();
   if (!res.ok) throw new Error(JSON.stringify(data));
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return data.choices?.[0]?.message?.content || '';
 }
 
 async function maybeSummarize(userName) {
@@ -50,7 +42,7 @@ async function maybeSummarize(userName) {
     const inputText = existingProfile
       ? `existing profile:\n${existingProfile}\n\nnew facts:\n${facts.map(f => `- ${f}`).join('\n')}`
       : facts.map(f => `- ${f}`).join('\n');
-    const compressed = await geminiChat(
+    const compressed = await orChat(
       'you are a memory compression engine. compress the facts into a tight paragraph. no fluff. third person.',
       [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
       300, 0.3
@@ -71,8 +63,8 @@ async function maybeNameSession(userName, sessionId, messages) {
     const sessions = await getSessions(userName);
     const session = sessions.find(s => s.id === sessionId);
     if (!session || session.name) return;
-    const title = await geminiChat(
-      'you are newton. give a short sarcastic hinglish title for this conversation. max 5 words. no quotes. no punctuation at end.',
+    const title = await orChat(
+      'you are newton. give a short sarcastic hinglish title for this conversation. max 5 words. no quotes. no punctuation at end. just the title.',
       [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
       20, 1.1
     );
@@ -104,7 +96,7 @@ export default async function handler(req, res) {
   }));
 
   try {
-    const raw = await geminiChat(
+    const raw = await orChat(
       NEWTON_SYSTEM_PROMPT(memory, story, user.name),
       [...recentHistory, { role: 'user', content: message.trim() }],
       1024, 1.0
@@ -132,9 +124,9 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('gemini error:', err);
+    console.error('openrouter error:', err);
     const msg = err?.message?.toLowerCase() || '';
-    if (msg.includes('rate') || msg.includes('429') || msg.includes('quota')) return res.status(429).json({ error: getError('rate_limit') });
+    if (msg.includes('rate') || msg.includes('429')) return res.status(429).json({ error: getError('rate_limit') });
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('econnrefused')) return res.status(503).json({ error: getError('network') });
     return res.status(500).json({ error: getError('groq_down') });
   }
