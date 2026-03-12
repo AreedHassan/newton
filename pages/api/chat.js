@@ -1,4 +1,6 @@
+
 // pages/api/chat.js
+import Groq from 'groq-sdk';
 import { verifyToken, getToken } from '../../lib/auth';
 import {
   buildMemoryForUser, getStory, appendStory,
@@ -7,32 +9,7 @@ import {
 } from '../../lib/db';
 import { NEWTON_SYSTEM_PROMPT, SUMMARIZE_PROMPT, SESSION_NAME_PROMPT, extractUpdates, getError } from '../../lib/newton';
 
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free';
-
-async function orChat(systemPrompt, messages, maxTokens = 1024, temperature = 1.0) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://asknewton.vercel.app',
-      'X-Title': 'newton'
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
-      max_tokens: maxTokens,
-      temperature
-    })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(JSON.stringify(data));
-  return data.choices?.[0]?.message?.content || '';
-}
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function maybeSummarize(userName) {
   try {
@@ -42,17 +19,19 @@ async function maybeSummarize(userName) {
     const inputText = existingProfile
       ? `existing profile:\n${existingProfile}\n\nnew facts:\n${facts.map(f => `- ${f}`).join('\n')}`
       : facts.map(f => `- ${f}`).join('\n');
-    const compressed = await orChat(
-      'you are a memory compression engine. compress the facts into a tight paragraph. no fluff. third person.',
-      [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
-      300, 0.3
-    );
+    const res = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
+      max_tokens: 300,
+      temperature: 0.3
+    });
+    const compressed = res.choices[0].message.content.trim();
     if (compressed) {
-      await setProfile(userName, compressed.trim());
+      await setProfile(userName, compressed);
       await clearRawFacts(userName);
     }
   } catch (e) {
-    console.error('summarize failed:', e?.message);
+    console.error('summarize failed silently:', e?.message);
   }
 }
 
@@ -63,14 +42,16 @@ async function maybeNameSession(userName, sessionId, messages) {
     const sessions = await getSessions(userName);
     const session = sessions.find(s => s.id === sessionId);
     if (!session || session.name) return;
-    const title = await orChat(
-      'you are newton. give a short sarcastic hinglish title for this conversation. max 5 words. no quotes. no punctuation at end. just the title.',
-      [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
-      20, 1.1
-    );
-    if (title) await updateSession(userName, sessionId, { name: title.trim().replace(/['"]/g, '') });
+    const res = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
+      max_tokens: 20,
+      temperature: 1.1
+    });
+    const title = res.choices[0].message.content.trim().replace(/['"]/g, '');
+    if (title) await updateSession(userName, sessionId, { name: title });
   } catch (e) {
-    console.error('session naming failed:', e?.message);
+    console.error('session naming failed silently:', e?.message);
   }
 }
 
@@ -81,8 +62,8 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: getError('generic') });
 
   const { message, sessionId } = req.body;
-  if (!message?.trim()) return res.status(400).json({ error: 'kuch bol toh' });
-  if (!sessionId) return res.status(400).json({ error: 'sessionId chahiye' });
+  if (!message?.trim()) return res.status(400).json({ error: 'say something.' });
+  if (!sessionId) return res.status(400).json({ error: 'sessionId missing' });
 
   const [memory, story, history] = await Promise.all([
     buildMemoryForUser(user.name),
@@ -96,12 +77,18 @@ export default async function handler(req, res) {
   }));
 
   try {
-    const raw = await orChat(
-      NEWTON_SYSTEM_PROMPT(memory, story, user.name),
-      [...recentHistory, { role: 'user', content: message.trim() }],
-      1024, 1.0
-    );
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: NEWTON_SYSTEM_PROMPT(memory, story, user.name) },
+        ...recentHistory,
+        { role: 'user', content: message.trim() }
+      ],
+      max_tokens: 1024,
+      temperature: 1.0
+    });
 
+    const raw = completion.choices[0].message.content;
     const { cleanText, memoryUpdate, storyUpdate } = extractUpdates(raw);
 
     await addSessionMessage(user.name, sessionId, { role: 'user', content: message.trim(), ts: Date.now() });
@@ -124,7 +111,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('openrouter error:', err);
+    console.error('groq error:', err);
     const msg = err?.message?.toLowerCase() || '';
     if (msg.includes('rate') || msg.includes('429')) return res.status(429).json({ error: getError('rate_limit') });
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('econnrefused')) return res.status(503).json({ error: getError('network') });
