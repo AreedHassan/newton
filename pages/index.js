@@ -705,7 +705,6 @@ export default function App() {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   }, [msgs]);
 
-  // auto resize textarea
   useEffect(() => {
     if (taRef.current) {
       taRef.current.style.height = 'auto';
@@ -812,7 +811,7 @@ export default function App() {
       const r = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: f.name.value.trim(), password: f.password.value })
+        body: JSON.stringify({ name: f.name.value.trim().toLowerCase(), password: f.password.value })
       });
       const d = await r.json();
       if (!r.ok) { setStatusMsg(d.error); setStatusOk(false); }
@@ -822,9 +821,9 @@ export default function App() {
         localStorage.setItem('nt_admin', d.isAdmin ? 'true' : 'false');
         setToken(d.token); setUser(d.user);
         setIsAdmin(!!d.isAdmin);
-        setScreen('chat'); loadHistory(d.token);
+        setScreen('chat'); loadSessions(d.token);
       }
-    } catch { setStatusMsg('error. try again.'); setStatusOk(false); }
+    } catch { setStatusMsg('something went wrong. try again.'); setStatusOk(false); }
     setLoading(false);
   }
 
@@ -836,12 +835,12 @@ export default function App() {
       const r = await fetch('/api/request-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: f.name.value.trim(), email: f.email.value.trim() })
+        body: JSON.stringify({ name: (f.firstName.value.trim() + ' ' + f.lastName.value.trim()), email: f.email.value.trim() })
       });
       const d = await r.json();
       if (!r.ok) { setStatusMsg(d.error); setStatusOk(false); }
-      else { setStatusMsg('request bhej di. admin approve karega toh email aayega.'); setStatusOk(true); }
-    } catch { setStatusMsg('error.'); setStatusOk(false); }
+      else { setStatusMsg('request sent. you will get an invite link once approved.'); setStatusOk(true); }
+    } catch { setStatusMsg('error. try again.'); setStatusOk(false); }
     setLoading(false);
   }
 
@@ -881,17 +880,15 @@ export default function App() {
       if (d.response) {
         setMsgs(p => [...p, { role: 'assistant', content: d.response, ts: Date.now() }]);
         if (d.memoryUpdated) { setMemFlash(true); setTimeout(() => setMemFlash(false), 3000); }
-        // refresh session list silently (newton may have named it)
         setTimeout(() => {
           fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); }).catch(() => {});
         }, 2000);
-        // story updated silently — admin can check via story panel
       } else {
-        setMsgs(p => [...p, { role: 'assistant', content: d.error || 'kuch toot gaya.', ts: Date.now() }]);
+        setMsgs(p => [...p, { role: 'assistant', content: d.error || 'something broke.', ts: Date.now() }]);
       }
     } catch {
-      setMsgs(p => [...p, { role: 'assistant', content: 'network issue.', ts: Date.now() }]);
+      setMsgs(p => [...p, { role: 'assistant', content: 'lost connection. try again.', ts: Date.now() }]);
     }
     setLoading(false);
     inputRef.current?.focus();
@@ -902,7 +899,7 @@ export default function App() {
   }
 
   function logout() {
-    if (!confirm('logout karna hai? sure hai?')) return;
+    if (!confirm('sure you want to log out?')) return;
     localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin');
     setToken(null); setUser(null); setScreen('login'); setMsgs([]); setSessions([]); setCurrentSession(null);
   }
@@ -928,7 +925,6 @@ export default function App() {
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   }
 
-  // group messages by date for separators
   function renderMessages() {
     const out = [];
     let lastDate = null;
@@ -960,7 +956,7 @@ export default function App() {
       <div className="login-screen">
         <div className="login-card">
           <div className="login-logo">newton</div>
-          <div className="login-sub">{tab === "request" ? "sach mein join karna chahta hai?" : "wapas aa gaya"}</div>
+          <div className="login-sub">{tab === "request" ? "want to talk to newton?" : "welcome back"}</div>
           <div className="seg-control">
             <button className={`seg-btn ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setStatusMsg(''); }}>login</button>
             <button className={`seg-btn ${tab === 'request' ? 'active' : ''}`} onClick={() => { setTab('request'); setStatusMsg(''); }}>request access</button>
@@ -968,30 +964,38 @@ export default function App() {
           {tab === 'login' ? (
             <form onSubmit={handleLogin}>
               <div className="field">
-                <label className="field-label">naam</label>
-                <input className="field-input" name="name" placeholder="apna actual naam" autoComplete="name" required />
+                <label className="field-label">email</label>
+                <input className="field-input" name="name" type="email" placeholder="your email address" autoComplete="email" required />
               </div>
               <div className="field">
                 <label className="field-label">password</label>
                 <input className="field-input" name="password" type="password" placeholder="••••••••" required />
               </div>
-              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'andar aa'}</button>
+              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'sign in'}</button>
               {statusMsg && <div className={`status-msg ${statusOk ? 'ok' : ''}`}>{statusMsg}</div>}
             </form>
           ) : (
             <form onSubmit={handleRequest}>
               <div className="field">
-                <label className="field-label">naam</label>
-                <input className="field-input" name="name" placeholder="apna poora real naam" required />
+                <div style={{display:'flex',gap:10}}>
+                  <div style={{flex:1}}>
+                    <label className="field-label">first name</label>
+                    <input className="field-input" name="firstName" placeholder="first name" required />
+                  </div>
+                  <div style={{flex:1}}>
+                    <label className="field-label">last name</label>
+                    <input className="field-input" name="lastName" placeholder="last name" required />
+                  </div>
+                </div>
                 <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginTop:6,lineHeight:1.5,paddingLeft:2}}>
-                  fake naam ya nickname mat dalna — admin real naam se hi approve karta hai. galat naam = reject.
+                  use your real name. that's how you get invited.
                 </div>
               </div>
               <div className="field">
                 <label className="field-label">email</label>
-                <input className="field-input" name="email" type="email" placeholder="jahan invite link aayega" required />
+                <input className="field-input" name="email" type="email" placeholder="your email address" required />
               </div>
-              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'request bhejo'}</button>
+              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'send request'}</button>
               {statusMsg && <div className={`status-msg ${statusOk ? 'ok' : ''}`}>{statusMsg}</div>}
             </form>
           )}
@@ -1030,7 +1034,7 @@ export default function App() {
             <div className="empty">
               <div className="empty-orb">⚛</div>
               <div className="empty-title">newton</div>
-              <div className="empty-sub">bol kuch. judge karta hun baad mein.</div>
+              <div className="empty-sub">say something.</div>
             </div>
           )}
           {renderMessages()}
@@ -1060,7 +1064,6 @@ export default function App() {
           </div>
         </div>
       </div>
-
 
       {showSessions && (
         <>
@@ -1121,7 +1124,7 @@ export default function App() {
             </div>
             <div className="sheet-body">
               {sheet === 'memory'
-                ? (myMemory || <span className="sheet-empty">newton abhi kuch nahi jaanta tere baare mein. baat kar isse.</span>)
+                ? (myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>)
                 : (storyData || <span className="sheet-empty">no story built yet.</span>)
               }
             </div>
