@@ -1,6 +1,4 @@
-
 // pages/api/chat.js
-import Groq from 'groq-sdk';
 import { verifyToken, getToken } from '../../lib/auth';
 import {
   buildMemoryForUser, getStory, appendStory,
@@ -9,7 +7,33 @@ import {
 } from '../../lib/db';
 import { NEWTON_SYSTEM_PROMPT, SUMMARIZE_PROMPT, SESSION_NAME_PROMPT, extractUpdates, getError } from '../../lib/newton';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+const MODEL = 'moonshotai/kimi-k2-instruct';
+
+async function nvidiaChat(systemPrompt, messages, maxTokens = 1024, temperature = 0.8) {
+  const res = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+      max_tokens: maxTokens,
+      temperature,
+      top_p: 0.9,
+      stream: false
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(data));
+  return data.choices?.[0]?.message?.content || '';
+}
 
 async function maybeSummarize(userName) {
   try {
@@ -19,19 +43,17 @@ async function maybeSummarize(userName) {
     const inputText = existingProfile
       ? `existing profile:\n${existingProfile}\n\nnew facts:\n${facts.map(f => `- ${f}`).join('\n')}`
       : facts.map(f => `- ${f}`).join('\n');
-    const res = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
-      max_tokens: 300,
-      temperature: 0.3
-    });
-    const compressed = res.choices[0].message.content.trim();
+    const compressed = await nvidiaChat(
+      'you are a memory compression engine. compress the facts into a tight paragraph. no fluff. third person.',
+      [{ role: 'user', content: SUMMARIZE_PROMPT(userName, inputText) }],
+      300, 0.3
+    );
     if (compressed) {
-      await setProfile(userName, compressed);
+      await setProfile(userName, compressed.trim());
       await clearRawFacts(userName);
     }
   } catch (e) {
-    console.error('summarize failed silently:', e?.message);
+    console.error('summarize failed:', e?.message);
   }
 }
 
@@ -42,16 +64,14 @@ async function maybeNameSession(userName, sessionId, messages) {
     const sessions = await getSessions(userName);
     const session = sessions.find(s => s.id === sessionId);
     if (!session || session.name) return;
-    const res = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
-      max_tokens: 20,
-      temperature: 1.1
-    });
-    const title = res.choices[0].message.content.trim().replace(/['"]/g, '');
-    if (title) await updateSession(userName, sessionId, { name: title });
+    const title = await nvidiaChat(
+      'you are newton. give a short punchy title for this conversation. max 5 words. no quotes. no punctuation at end. just the title.',
+      [{ role: 'user', content: SESSION_NAME_PROMPT(messages.slice(-6)) }],
+      20, 1.0
+    );
+    if (title) await updateSession(userName, sessionId, { name: title.trim().replace(/['"]/g, '') });
   } catch (e) {
-    console.error('session naming failed silently:', e?.message);
+    console.error('session naming failed:', e?.message);
   }
 }
 
@@ -77,18 +97,12 @@ export default async function handler(req, res) {
   }));
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: NEWTON_SYSTEM_PROMPT(memory, story, user.name) },
-        ...recentHistory,
-        { role: 'user', content: message.trim() }
-      ],
-      max_tokens: 1024,
-      temperature: 1.0
-    });
+    const raw = await nvidiaChat(
+      NEWTON_SYSTEM_PROMPT(memory, story, user.name),
+      [...recentHistory, { role: 'user', content: message.trim() }],
+      1024, 0.9
+    );
 
-    const raw = completion.choices[0].message.content;
     const { cleanText, memoryUpdate, storyUpdate } = extractUpdates(raw);
 
     await addSessionMessage(user.name, sessionId, { role: 'user', content: message.trim(), ts: Date.now() });
@@ -111,7 +125,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('groq error:', err);
+    console.error('nvidia error:', err);
     const msg = err?.message?.toLowerCase() || '';
     if (msg.includes('rate') || msg.includes('429')) return res.status(429).json({ error: getError('rate_limit') });
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('econnrefused')) return res.status(503).json({ error: getError('network') });
