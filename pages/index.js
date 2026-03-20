@@ -1124,7 +1124,17 @@ export default function App() {
             </div>
             <div className="sheet-body">
               {sheet === 'memory'
-                ? (myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>)
+                ? (<>
+                    {myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>}
+                    <button onClick={async () => {
+                      if (!confirm('clear everything newton knows about you?')) return;
+                      await fetch('/api/clear-memory', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                      setMyMemory('');
+                      setSheet(null);
+                    }} style={{marginTop:20,width:'100%',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>
+                      clear memory
+                    </button>
+                  </>)
                 : (storyData || <span className="sheet-empty">no story built yet.</span>)
               }
             </div>
