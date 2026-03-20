@@ -1,5 +1,5 @@
 // pages/api/admin.js
-import { getRequests, removeRequest, saveInvite, getUsers } from '../../lib/db';
+import { getRequests, removeRequest, saveInvite, getUsers, saveUser, getUserByName, getSessions, getSessionMessages } from '../../lib/db';
 import { v4 as uuid } from 'uuid';
 
 const MAIL_USER = 'supportnewton@gmail.com';
@@ -18,32 +18,24 @@ async function sendInviteEmail(to, name, link) {
       subject: `you're in, ${name}.`,
       html: `
         <div style="background:#000000;padding:48px 32px;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;max-width:480px;margin:0 auto;">
-          
           <div style="margin-bottom:40px;">
             <span style="font-size:28px;font-weight:700;letter-spacing:-1px;color:#ffffff;">newton</span>
           </div>
-
           <div style="background:#111111;border-radius:20px;padding:32px;border:1px solid #222222;">
-            
             <h2 style="font-size:22px;font-weight:600;color:#ffffff;margin:0 0 8px;letter-spacing:-0.5px;">hey ${name},</h2>
             <p style="color:#888888;font-size:15px;line-height:1.6;margin:0 0 28px;">
               your request was approved. click below to set up your account and start talking to newton.
             </p>
-
             <a href="${link}" style="display:block;text-align:center;padding:15px 28px;background:#ffffff;color:#000000;border-radius:12px;font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.2px;">
               join newton &rarr;
             </a>
-
             <p style="color:#444444;font-size:12px;margin:20px 0 0;text-align:center;line-height:1.6;">
               this link expires in 48 hours.<br/>it's for you only — don't share it.
             </p>
-
           </div>
-
           <p style="color:#333333;font-size:11px;margin:24px 0 0;text-align:center;">
             you received this because someone requested access to newton.
           </p>
-
         </div>
       `
     });
@@ -68,6 +60,20 @@ export default async function handler(req, res) {
     if (key !== 'areed@areed') return res.status(401).json({ error: 'nope' });
 
     if (req.method === 'GET') {
+      const { action, userName } = req.query;
+
+      // get chat history for a user
+      if (action === 'history' && userName) {
+        const sessions = await getSessions(userName);
+        const sessionsWithMessages = await Promise.all(
+          (sessions || []).map(async s => {
+            const messages = await getSessionMessages(userName, s.id);
+            return { ...s, messages: messages || [] };
+          })
+        );
+        return res.status(200).json({ sessions: sessionsWithMessages });
+      }
+
       const [rawRequests, rawUsers] = await Promise.all([getRequests(), getUsers()]);
       const requests = unwrap(rawRequests) || [];
       const users = unwrap(rawUsers) || {};
@@ -94,6 +100,22 @@ export default async function handler(req, res) {
 
       if (action === 'reject') {
         await removeRequest(email);
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === 'ban') {
+        const { userName, reason } = req.body;
+        const user = await getUserByName(userName);
+        if (!user) return res.status(404).json({ error: 'user not found' });
+        await saveUser({ ...user, banned: true, banReason: reason || '' });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === 'unban') {
+        const { userName } = req.body;
+        const user = await getUserByName(userName);
+        if (!user) return res.status(404).json({ error: 'user not found' });
+        await saveUser({ ...user, banned: false, banReason: '' });
         return res.status(200).json({ ok: true });
       }
     }

@@ -414,6 +414,7 @@ const CSS = `
 
 export default function App() {
   const [screen, setScreen] = useState('login');
+  const [banReason, setBanReason] = useState('');
   const [tab, setTab] = useState('login');
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -441,6 +442,12 @@ export default function App() {
     const t = localStorage.getItem('nt_tok');
     const u = localStorage.getItem('nt_usr');
     const admin = localStorage.getItem('nt_admin');
+    const banned = localStorage.getItem('nt_banned');
+    if (banned !== null) {
+      setBanReason(banned);
+      setScreen('banned');
+      return;
+    }
     if (t && u) {
       const parsedUser = JSON.parse(u);
       setToken(t); setUser(parsedUser);
@@ -563,8 +570,15 @@ export default function App() {
         body: JSON.stringify({ name: f.name.value.trim().toLowerCase(), password: f.password.value })
       });
       const d = await r.json();
-      if (!r.ok) { setStatusMsg(d.error); setStatusOk(false); }
-      else {
+      if (!r.ok) {
+        if (d.error === 'banned') {
+          localStorage.setItem('nt_banned', d.banReason || '');
+          setBanReason(d.banReason || '');
+          setScreen('banned');
+        } else {
+          setStatusMsg(d.error); setStatusOk(false);
+        }
+      } else {
         localStorage.setItem('nt_tok', d.token);
         localStorage.setItem('nt_usr', JSON.stringify(d.user));
         localStorage.setItem('nt_admin', d.isAdmin ? 'true' : 'false');
@@ -647,6 +661,7 @@ export default function App() {
   function logout() {
     if (!confirm('sure you want to log out?')) return;
     localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin');
+    localStorage.removeItem('nt_banned');
     setToken(null); setUser(null); setScreen('login'); setMsgs([]); setSessions([]); setCurrentSession(null);
   }
 
@@ -744,6 +759,19 @@ export default function App() {
     return out;
   }
 
+  // BANNED SCREEN
+  if (screen === 'banned') return (
+    <>
+      <Head><title>newton</title></Head>
+      <style>{CSS}</style>
+      <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'Plus Jakarta Sans', -apple-system, sans-serif"}}>
+        <div style={{fontSize:32,fontWeight:700,color:'#fff',letterSpacing:-1,marginBottom:banReason ? 10 : 0}}>you are banned</div>
+        {banReason && <div style={{fontSize:14,color:'#444',textAlign:'center',maxWidth:280,lineHeight:1.6}}>{banReason}</div>}
+      </div>
+    </>
+  );
+
+  // LOGIN SCREEN
   if (screen === 'login') return (
     <>
       <Head>
@@ -803,6 +831,7 @@ export default function App() {
     </>
   );
 
+  // CHAT SCREEN
   return (
     <>
       <Head>

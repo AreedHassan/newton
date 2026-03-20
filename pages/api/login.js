@@ -16,6 +16,13 @@ export default async function handler(req, res) {
   const user = await getUserByEmail(email.trim().toLowerCase());
   if (!user) return res.status(401).json({ error: 'no account found with that email.' });
 
+  if (user.banned) {
+    return res.status(403).json({
+      error: 'banned',
+      banReason: user.banReason || ''
+    });
+  }
+
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({ error: 'wrong password.' });
 
