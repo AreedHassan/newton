@@ -1023,8 +1023,8 @@ export default function App() {
             </div>
           </div>
           <div className="header-right">
-            <button className="hbtn" onClick={() => setShowSessions(p => !p)} title="chats">💬</button>
             <button className={`hbtn ${memFlash ? 'flashing' : ''}`} onClick={() => openSheet(sheet === 'memory' ? null : 'memory')} title="what newton remembers about you">🧠</button>
+<button className="hbtn" onClick={() => setShowSessions(p => !p)} title="chats">💬</button>
             {isAdmin && <button className="hbtn" onClick={() => openSheet(sheet === 'story' ? null : 'story')} title="shared story">📖</button>}
           </div>
         </div>
