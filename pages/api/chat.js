@@ -3,7 +3,8 @@ import { verifyToken, getToken } from '../../lib/auth';
 import {
   buildMemoryForUser, getStory, appendStory,
   addRawFact, getRawFacts, getProfile, setProfile, clearRawFacts,
-  getSessionMessages, addSessionMessage, updateSession, getSessions
+  getSessionMessages, addSessionMessage, updateSession, getSessions,
+  getUserByName
 } from '../../lib/db';
 import { NEWTON_SYSTEM_PROMPT, SUMMARIZE_PROMPT, SESSION_NAME_PROMPT, extractUpdates, getError } from '../../lib/newton';
 
@@ -80,6 +81,9 @@ export default async function handler(req, res) {
 
   const user = verifyToken(getToken(req));
   if (!user) return res.status(401).json({ error: getError('generic') });
+
+  const userData = await getUserByName(user.name);
+  if (userData?.banned) return res.status(403).json({ error: 'banned', banReason: userData.banReason || '' });
 
   const { message, sessionId } = req.body;
   if (!message?.trim()) return res.status(400).json({ error: 'say something.' });
