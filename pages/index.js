@@ -381,7 +381,7 @@ const CSS = `
   .new-chat-btn {
     margin: 12px; padding: 11px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px; color: var(--text); font-family: var(--font);
+    border-radius: 12px; color: var(--font); font-family: var(--font);
     font-size: 14px; font-weight: 500; cursor: pointer;
     display: flex; align-items: center; gap: 8px; transition: all 0.15s; flex-shrink: 0;
   }
@@ -411,6 +411,26 @@ const CSS = `
   }
   .sess-item:hover .sess-delete, .sess-item:active .sess-delete { opacity: 1; }
 `;
+
+function BanChecker({ onUnbanned }) {
+  useEffect(() => {
+    const email = (() => { try { return JSON.parse(localStorage.getItem('nt_usr'))?.email; } catch { return null; } })();
+    if (!email) return;
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: email, password: '___check___' })
+        });
+        const d = await r.json();
+        if (d.error !== 'banned') onUnbanned();
+      } catch {}
+    }, 8000);
+    return () => clearInterval(iv);
+  }, []);
+  return null;
+}
 
 export default function App() {
   const [screen, setScreen] = useState('login');
@@ -644,6 +664,10 @@ export default function App() {
           fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); }).catch(() => {});
         }, 2000);
+      } else if (d.error === 'banned') {
+        localStorage.setItem('nt_banned', d.banReason || '');
+        setBanReason(d.banReason || '');
+        setScreen('banned');
       } else {
         setMsgs(p => [...p, { role: 'assistant', content: d.error || 'something broke.', ts: Date.now() }]);
       }
@@ -764,6 +788,13 @@ export default function App() {
     <>
       <Head><title>newton</title></Head>
       <style>{CSS}</style>
+      <BanChecker onUnbanned={() => {
+        localStorage.removeItem('nt_banned');
+        localStorage.removeItem('nt_tok');
+        localStorage.removeItem('nt_usr');
+        localStorage.removeItem('nt_admin');
+        setScreen('login');
+      }} />
       <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'Plus Jakarta Sans', -apple-system, sans-serif"}}>
         <div style={{fontSize:32,fontWeight:700,color:'#fff',letterSpacing:-1,marginBottom:banReason ? 10 : 0}}>you are banned</div>
         {banReason && <div style={{fontSize:14,color:'#444',textAlign:'center',maxWidth:280,lineHeight:1.6}}>{banReason}</div>}
