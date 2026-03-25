@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -11,15 +10,10 @@ const CSS = `
   :root {
     --blur: blur(40px) saturate(180%);
     --blur-sm: blur(20px) saturate(160%);
-    --glass: rgba(255,255,255,0.08);
     --glass-border: rgba(255,255,255,0.15);
-    --glass-strong: rgba(255,255,255,0.13);
     --text: rgba(255,255,255,0.95);
     --text-2: rgba(255,255,255,0.6);
     --text-3: rgba(255,255,255,0.35);
-    --accent: #ffffff;
-    --bubble-user: rgba(255,255,255,0.14);
-    --bubble-newton: rgba(255,255,255,0.07);
     --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
   }
 
@@ -56,10 +50,10 @@ const CSS = `
     background: rgba(0,0,0,0.45);
   }
   @keyframes meshFloat {
-    0% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(-3%, 2%) rotate(1deg); }
-    66% { transform: translate(2%, -3%) rotate(-0.5deg); }
-    100% { transform: translate(-1%, 1%) rotate(0.5deg); }
+    0% { transform: translate(0,0) rotate(0deg); }
+    33% { transform: translate(-3%,2%) rotate(1deg); }
+    66% { transform: translate(2%,-3%) rotate(-0.5deg); }
+    100% { transform: translate(-1%,1%) rotate(0.5deg); }
   }
 
   .app {
@@ -77,6 +71,84 @@ const CSS = `
     .input-area { padding-bottom: 20px; }
   }
 
+  /* LANDING */
+  .landing-screen {
+    position: relative;
+    z-index: 1;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow: hidden;
+  }
+  .landing-hero {
+    font-size: clamp(72px, 20vw, 120px);
+    font-weight: 700;
+    letter-spacing: -4px;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+    user-select: none;
+  }
+  .landing-quote {
+    font-size: 15px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 400;
+    letter-spacing: 0.2px;
+    margin-bottom: 48px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  .landing-buttons {
+    display: flex;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 320px;
+  }
+  .land-btn {
+    flex: 1;
+    padding: 14px 10px;
+    border-radius: 16px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    backdrop-filter: var(--blur-sm);
+    -webkit-backdrop-filter: var(--blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .land-btn:active { transform: scale(0.97); opacity: 0.8; }
+  .landing-dev {
+    position: absolute;
+    bottom: 28px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    font-weight: 400;
+    z-index: 2;
+    letter-spacing: 0.2px;
+  }
+
+  /* trains canvas */
+  .trains-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* LOGIN */
   .login-screen {
     position: relative;
     z-index: 1;
@@ -96,14 +168,10 @@ const CSS = `
     border-radius: 28px;
     padding: 40px 32px 36px;
     box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
-    animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1);
-  }
-  @keyframes cardIn {
-    from { opacity: 0; transform: translateY(24px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .login-logo { font-size: 42px; font-weight: 700; letter-spacing: -2px; color: var(--text); margin-bottom: 4px; }
-  .login-sub { font-size: 13px; color: var(--text-3); font-weight: 400; margin-bottom: 32px; letter-spacing: 0.2px; }
+  .login-sub { font-size: 13px; color: var(--text-3); font-weight: 400; margin-bottom: 8px; letter-spacing: 0.2px; }
+  .login-dev { font-size: 13px; color: rgba(255,255,255,0.3); font-weight: 400; margin-bottom: 24px; letter-spacing: 0.2px; }
   .seg-control {
     display: flex;
     background: rgba(255,255,255,0.06);
@@ -152,6 +220,24 @@ const CSS = `
   }
   .status-msg.ok { color: rgba(120,255,160,0.9); background: rgba(60,255,120,0.06); border-color: rgba(60,255,120,0.12); }
 
+  /* slide transition */
+  .slide-container {
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .slide-page {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+  }
+  .slide-page.landing-page { transform: translateY(0); }
+  .slide-page.landing-page.exit { transform: translateY(-100%); }
+  .slide-page.login-page { transform: translateY(100%); }
+  .slide-page.login-page.enter { transform: translateY(0); }
+
+  /* CHAT */
   .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 20px 14px;
@@ -188,7 +274,6 @@ const CSS = `
     overscroll-behavior: contain;
   }
   .msgs::-webkit-scrollbar { display: none; }
-
   .msg-row {
     display: flex; flex-direction: column;
     animation: msgIn 0.28s cubic-bezier(0.16,1,0.3,1);
@@ -199,7 +284,6 @@ const CSS = `
   }
   .msg-row.user { align-items: flex-end; }
   .msg-row.newton { align-items: flex-start; }
-
   .msg-bubble {
     max-width: 78%; padding: 11px 15px; border-radius: 20px;
     font-size: 15px; line-height: 1.55; word-break: break-word;
@@ -222,7 +306,6 @@ const CSS = `
   .msg-bubble strong { font-weight: 700; color: rgba(255,255,255,1); }
   .msg-bubble em { font-style: italic; color: rgba(255,255,255,0.75); }
   .msg-bubble code { background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 4px; font-size: 13px; font-family: monospace; }
-
   .msg-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; padding: 0 4px; }
   .msg-time { font-size: 10px; color: var(--text-3); font-weight: 400; font-family: var(--font); }
   .copy-btn {
@@ -231,7 +314,6 @@ const CSS = `
     font-family: var(--font); line-height: 1; transition: color 0.15s;
   }
   .copy-btn:active { color: rgba(255,255,255,0.6); }
-
   .date-sep { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
   .date-sep span {
     font-size: 11px; color: var(--text-3); font-weight: 500; white-space: nowrap;
@@ -239,7 +321,6 @@ const CSS = `
     border-radius: 20px; border: 1px solid rgba(255,255,255,0.07);
   }
   .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
-
   .typing-row { align-items: flex-start; }
   .typing-bubble {
     padding: 13px 18px; background: rgba(255,255,255,0.06);
@@ -258,7 +339,6 @@ const CSS = `
     0%, 100% { opacity: 0.3; transform: scale(0.8); }
     50% { opacity: 1; transform: scale(1.1); }
   }
-
   .empty {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -274,7 +354,6 @@ const CSS = `
   }
   .empty-title { font-size: 18px; font-weight: 600; color: var(--text-2); }
   .empty-sub { font-size: 14px; color: var(--text-3); text-align: center; max-width: 240px; line-height: 1.5; }
-
   .input-area {
     padding: 10px 14px 16px; display: flex; align-items: flex-end;
     gap: 8px; background: transparent; flex-shrink: 0;
@@ -306,7 +385,6 @@ const CSS = `
   }
   .send-btn:active { transform: scale(0.9); }
   .send-btn:disabled { opacity: 0.2; cursor: default; }
-
   .sheet-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 40; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -339,19 +417,16 @@ const CSS = `
   }
   .sheet-body {
     flex: 1; overflow-y: auto; padding: 16px 20px 32px;
-    font-size: 13px; color: var(--text-2);
-    font-family: var(--font);
+    font-size: 13px; color: var(--text-2); font-family: var(--font);
     line-height: 1.8; white-space: pre-wrap;
   }
   .sheet-body::-webkit-scrollbar { display: none; }
   .sheet-empty { color: var(--text-3); font-style: italic; }
-
   @keyframes flashPulse {
     0%, 100% { box-shadow: none; }
     50% { box-shadow: 0 0 0 3px rgba(255,255,255,0.2); }
   }
   .hbtn.flashing { animation: flashPulse 0.5s ease 4; }
-
   .sess-panel {
     position: fixed; top: 0; bottom: 0;
     right: max(0px, calc(50vw - 340px));
@@ -381,7 +456,7 @@ const CSS = `
   .new-chat-btn {
     margin: 12px; padding: 11px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px; color: var(--font); font-family: var(--font);
+    border-radius: 12px; color: var(--text); font-family: var(--font);
     font-size: 14px; font-weight: 500; cursor: pointer;
     display: flex; align-items: center; gap: 8px; transition: all 0.15s; flex-shrink: 0;
   }
@@ -412,6 +487,101 @@ const CSS = `
   .sess-item:hover .sess-delete, .sess-item:active .sess-delete { opacity: 1; }
 `;
 
+function TrainCanvas() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    const trains = [];
+
+    function resize() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function spawnTrain() {
+      const y = Math.random() * canvas.height;
+      const speed = 280 + Math.random() * 200;
+      const goingRight = Math.random() > 0.5;
+      trains.push({
+        x: goingRight ? -60 : canvas.width + 60,
+        y,
+        speed: goingRight ? speed : -speed,
+        trail: [],
+        length: 60 + Math.random() * 40,
+        opacity: 0.7 + Math.random() * 0.3
+      });
+    }
+
+    // seed initial trains staggered
+    for (let i = 0; i < 4; i++) {
+      setTimeout(spawnTrain, i * 1200);
+    }
+
+    // keep spawning
+    const spawnInterval = setInterval(() => {
+      if (trains.length < 6) spawnTrain();
+    }, 1400);
+
+    let last = performance.now();
+    function draw(now) {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = trains.length - 1; i >= 0; i--) {
+        const t = trains[i];
+        t.x += t.speed * dt;
+        t.trail.unshift({ x: t.x, y: t.y });
+        if (t.trail.length > 40) t.trail.pop();
+
+        // draw trail
+        for (let j = 0; j < t.trail.length - 1; j++) {
+          const alpha = (1 - j / t.trail.length) * t.opacity * 0.8;
+          const width = (1 - j / t.trail.length) * 2.5;
+          ctx.beginPath();
+          ctx.moveTo(t.trail[j].x, t.trail[j].y);
+          ctx.lineTo(t.trail[j + 1].x, t.trail[j + 1].y);
+          ctx.strokeStyle = `rgba(80,160,255,${alpha})`;
+          ctx.lineWidth = width;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+        }
+
+        // draw glowing head
+        const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, 10);
+        grad.addColorStop(0, `rgba(140,200,255,${t.opacity})`);
+        grad.addColorStop(0.4, `rgba(60,140,255,${t.opacity * 0.6})`);
+        grad.addColorStop(1, 'rgba(0,80,255,0)');
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // remove if off screen
+        if ((t.speed > 0 && t.x > canvas.width + 80) || (t.speed < 0 && t.x < -80)) {
+          trains.splice(i, 1);
+        }
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+    animId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      clearInterval(spawnInterval);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="trains-canvas" style={{width:'100%',height:'100%'}} />;
+}
+
 function BanChecker({ onUnbanned }) {
   useEffect(() => {
     const email = (() => { try { return JSON.parse(localStorage.getItem('nt_usr'))?.email; } catch { return null; } })();
@@ -433,9 +603,10 @@ function BanChecker({ onUnbanned }) {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('login');
+  const [screen, setScreen] = useState('landing');
+  const [loginTab, setLoginTab] = useState('login');
+  const [sliding, setSliding] = useState(false);
   const [banReason, setBanReason] = useState('');
-  const [tab, setTab] = useState('login');
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [msgs, setMsgs] = useState([]);
@@ -463,14 +634,9 @@ export default function App() {
     const u = localStorage.getItem('nt_usr');
     const admin = localStorage.getItem('nt_admin');
     const banned = localStorage.getItem('nt_banned');
-    if (banned !== null) {
-      setBanReason(banned);
-      setScreen('banned');
-      return;
-    }
+    if (banned !== null) { setBanReason(banned); setScreen('banned'); return; }
     if (t && u) {
-      const parsedUser = JSON.parse(u);
-      setToken(t); setUser(parsedUser);
+      setToken(t); setUser(JSON.parse(u));
       setIsAdmin(admin === 'true');
       setScreen('chat');
       loadSessions(t);
@@ -487,6 +653,13 @@ export default function App() {
       taRef.current.style.height = Math.min(taRef.current.scrollHeight, 120) + 'px';
     }
   }, [input]);
+
+  function goToLogin(tab) {
+    setLoginTab(tab);
+    setStatusMsg('');
+    setSliding(true);
+    setTimeout(() => { setScreen('login'); setSliding(false); }, 450);
+  }
 
   async function loadSessions(t) {
     try {
@@ -511,9 +684,7 @@ export default function App() {
   }
 
   async function switchSession(session) {
-    setCurrentSession(session);
-    setMsgs([]);
-    setShowSessions(false);
+    setCurrentSession(session); setMsgs([]); setShowSessions(false);
     await loadSessionHistory(session.id);
   }
 
@@ -525,12 +696,7 @@ export default function App() {
         body: JSON.stringify({ action: 'create' })
       });
       const d = await r.json();
-      if (d.session) {
-        setSessions(p => [d.session, ...p]);
-        setCurrentSession(d.session);
-        setMsgs([]);
-        setShowSessions(false);
-      }
+      if (d.session) { setSessions(p => [d.session, ...p]); setCurrentSession(d.session); setMsgs([]); setShowSessions(false); }
     } catch {}
   }
 
@@ -545,7 +711,7 @@ export default function App() {
       setSessions(remaining);
       if (currentSession?.id === sessionId) {
         if (remaining.length > 0) { setCurrentSession(remaining[0]); loadSessionHistory(remaining[0].id); }
-        else { newChat(); }
+        else newChat();
       }
     } catch {}
   }
@@ -564,19 +730,11 @@ export default function App() {
   }
 
   async function loadMyMemory() {
-    try {
-      const r = await fetch('/api/my-memory', { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json();
-      setMyMemory(d.memory || '');
-    } catch {}
+    try { const r = await fetch('/api/my-memory', { headers: { Authorization: `Bearer ${token}` } }); const d = await r.json(); setMyMemory(d.memory || ''); } catch {}
   }
 
   async function loadStory() {
-    try {
-      const r = await fetch('/api/lore', { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json();
-      setStoryData(d.story || '');
-    } catch {}
+    try { const r = await fetch('/api/lore', { headers: { Authorization: `Bearer ${token}` } }); const d = await r.json(); setStoryData(d.story || ''); } catch {}
   }
 
   async function handleLogin(e) {
@@ -591,19 +749,13 @@ export default function App() {
       });
       const d = await r.json();
       if (!r.ok) {
-        if (d.error === 'banned') {
-          localStorage.setItem('nt_banned', d.banReason || '');
-          setBanReason(d.banReason || '');
-          setScreen('banned');
-        } else {
-          setStatusMsg(d.error); setStatusOk(false);
-        }
+        if (d.error === 'banned') { localStorage.setItem('nt_banned', d.banReason || ''); setBanReason(d.banReason || ''); setScreen('banned'); }
+        else { setStatusMsg(d.error); setStatusOk(false); }
       } else {
         localStorage.setItem('nt_tok', d.token);
         localStorage.setItem('nt_usr', JSON.stringify(d.user));
         localStorage.setItem('nt_admin', d.isAdmin ? 'true' : 'false');
-        setToken(d.token); setUser(d.user);
-        setIsAdmin(!!d.isAdmin);
+        setToken(d.token); setUser(d.user); setIsAdmin(!!d.isAdmin);
         setScreen('chat'); loadSessions(d.token);
       }
     } catch { setStatusMsg('something went wrong. try again.'); setStatusOk(false); }
@@ -630,95 +782,58 @@ export default function App() {
   async function send() {
     const msg = input.trim();
     if (!msg || loading) return;
-    setInput('');
-    setLoading(true);
-    const userMsg = { role: 'user', content: msg, ts: Date.now() };
-    setMsgs(p => [...p, userMsg]);
+    setInput(''); setLoading(true);
+    setMsgs(p => [...p, { role: 'user', content: msg, ts: Date.now() }]);
     try {
       let sessionId = currentSession?.id;
       if (!sessionId) {
         try {
-          const sr = await fetch('/api/sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ action: 'create' })
-          });
+          const sr = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'create' }) });
           const sd = await sr.json();
-          if (sd.session) {
-            setCurrentSession(sd.session);
-            setSessions(p => [sd.session, ...p]);
-            sessionId = sd.session.id;
-          }
+          if (sd.session) { setCurrentSession(sd.session); setSessions(p => [sd.session, ...p]); sessionId = sd.session.id; }
         } catch {}
       }
-      const r = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: msg, sessionId })
-      });
+      const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ message: msg, sessionId }) });
       const d = await r.json();
       if (d.response) {
         setMsgs(p => [...p, { role: 'assistant', content: d.response, ts: Date.now() }]);
         if (d.memoryUpdated) { setMemFlash(true); setTimeout(() => setMemFlash(false), 3000); }
-        setTimeout(() => {
-          fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } })
-            .then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); }).catch(() => {});
-        }, 2000);
+        setTimeout(() => { fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); }).catch(() => {}); }, 2000);
       } else if (d.error === 'banned') {
-        localStorage.setItem('nt_banned', d.banReason || '');
-        setBanReason(d.banReason || '');
-        setScreen('banned');
+        localStorage.setItem('nt_banned', d.banReason || ''); setBanReason(d.banReason || ''); setScreen('banned');
       } else {
         setMsgs(p => [...p, { role: 'assistant', content: d.error || 'something broke.', ts: Date.now() }]);
       }
-    } catch {
-      setMsgs(p => [...p, { role: 'assistant', content: 'lost connection. try again.', ts: Date.now() }]);
-    }
+    } catch { setMsgs(p => [...p, { role: 'assistant', content: 'lost connection. try again.', ts: Date.now() }]); }
     setLoading(false);
     inputRef.current?.focus();
   }
 
-  function onKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  }
+  function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
 
   function logout() {
     if (!confirm('sure you want to log out?')) return;
-    localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin');
-    localStorage.removeItem('nt_banned');
-    setToken(null); setUser(null); setScreen('login'); setMsgs([]); setSessions([]); setCurrentSession(null);
+    ['nt_tok','nt_usr','nt_admin','nt_banned'].forEach(k => localStorage.removeItem(k));
+    setToken(null); setUser(null); setScreen('landing'); setMsgs([]); setSessions([]); setCurrentSession(null);
   }
 
-  function openSheet(s) {
-    setSheet(s);
-    if (s === 'memory') loadMyMemory();
-    if (s === 'story') loadStory();
-  }
+  function openSheet(s) { setSheet(s); if (s === 'memory') loadMyMemory(); if (s === 'story') loadStory(); }
 
-  function fmt(ts) {
-    if (!ts) return '';
-    return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  }
+  function fmt(ts) { if (!ts) return ''; return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); }
 
   function fmtDate(ts) {
-    const d = new Date(ts);
-    const today = new Date();
-    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const d = new Date(ts), today = new Date(), yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
     if (d.toDateString() === today.toDateString()) return 'today';
     if (d.toDateString() === yesterday.toDateString()) return 'yesterday';
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   }
 
-  function copyMsg(content, idx) {
-    navigator.clipboard.writeText(content);
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 1500);
-  }
+  function copyMsg(content, idx) { navigator.clipboard.writeText(content); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1500); }
 
   function inlineMarkdown(text, keyPrefix) {
-    const parts = [];
-    const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-    let last = 0; let match; let ki = 0;
+    const parts = []; const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+    let last = 0, match, ki = 0;
     while ((match = regex.exec(text)) !== null) {
       if (match.index > last) parts.push(text.slice(last, match.index));
       if (match[2]) parts.push(<strong key={`${keyPrefix}-b-${ki++}`}>{match[2]}</strong>);
@@ -731,21 +846,13 @@ export default function App() {
   }
 
   function renderMarkdown(text, msgIdx) {
-    const lines = text.split('\n');
-    const result = []; let i = 0;
+    const lines = text.split('\n'); const result = []; let i = 0;
     while (i < lines.length) {
       const line = lines[i];
       if (line.match(/^[-*]\s+/)) {
         const items = [];
-        while (i < lines.length && lines[i].match(/^[-*]\s+/)) {
-          items.push(lines[i].replace(/^[-*]\s+/, ''));
-          i++;
-        }
-        result.push(
-          <ul key={`ul-${i}`}>
-            {items.map((item, j) => <li key={j}>{inlineMarkdown(item, `ul-${i}-${j}`)}</li>)}
-          </ul>
-        );
+        while (i < lines.length && lines[i].match(/^[-*]\s+/)) { items.push(lines[i].replace(/^[-*]\s+/, '')); i++; }
+        result.push(<ul key={`ul-${i}`}>{items.map((item, j) => <li key={j}>{inlineMarkdown(item, `ul-${i}-${j}`)}</li>)}</ul>);
         continue;
       }
       if (line.trim() === '') { result.push(<br key={`br-${i}`} />); i++; continue; }
@@ -756,26 +863,16 @@ export default function App() {
   }
 
   function renderMessages() {
-    const out = [];
-    let lastDate = null;
+    const out = []; let lastDate = null;
     msgs.forEach((m, i) => {
       const d = m.ts ? new Date(m.ts).toDateString() : null;
-      if (d && d !== lastDate) {
-        out.push(<div key={`sep-${i}`} className="date-sep"><span>{fmtDate(m.ts)}</span></div>);
-        lastDate = d;
-      }
+      if (d && d !== lastDate) { out.push(<div key={`sep-${i}`} className="date-sep"><span>{fmtDate(m.ts)}</span></div>); lastDate = d; }
       out.push(
         <div key={i} className={`msg-row ${m.role === 'user' ? 'user' : 'newton'}`}>
-          <div className="msg-bubble">
-            {m.role === 'assistant' ? renderMarkdown(m.content, i) : m.content}
-          </div>
+          <div className="msg-bubble">{m.role === 'assistant' ? renderMarkdown(m.content, i) : m.content}</div>
           <div className="msg-meta">
             <div className="msg-time">{fmt(m.ts)}</div>
-            {m.role === 'assistant' && (
-              <button className="copy-btn" onClick={() => copyMsg(m.content, i)} title="copy">
-                {copiedIdx === i ? '✓' : '⧉'}
-              </button>
-            )}
+            {m.role === 'assistant' && <button className="copy-btn" onClick={() => copyMsg(m.content, i)}>{copiedIdx === i ? '✓' : '⧉'}</button>}
           </div>
         </div>
       );
@@ -783,43 +880,65 @@ export default function App() {
     return out;
   }
 
-  // BANNED SCREEN
+  // BANNED
   if (screen === 'banned') return (
     <>
       <Head><title>newton</title></Head>
       <style>{CSS}</style>
-      <BanChecker onUnbanned={() => {
-        localStorage.removeItem('nt_banned');
-        localStorage.removeItem('nt_tok');
-        localStorage.removeItem('nt_usr');
-        localStorage.removeItem('nt_admin');
-        setScreen('login');
-      }} />
-      <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'Plus Jakarta Sans', -apple-system, sans-serif"}}>
-        <div style={{fontSize:32,fontWeight:700,color:'#fff',letterSpacing:-1,marginBottom:banReason ? 10 : 0}}>you are banned</div>
+      <BanChecker onUnbanned={() => { localStorage.removeItem('nt_banned'); localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin'); setScreen('landing'); }} />
+      <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>
+        <div style={{fontSize:32,fontWeight:700,color:'#fff',letterSpacing:-1,marginBottom:banReason?10:0}}>you are banned</div>
         {banReason && <div style={{fontSize:14,color:'#444',textAlign:'center',maxWidth:280,lineHeight:1.6}}>{banReason}</div>}
       </div>
     </>
   );
 
-  // LOGIN SCREEN
-  if (screen === 'login') return (
+  // LANDING
+  if (screen === 'landing') return (
     <>
-      <Head>
-        <title>newton</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-      </Head>
+      <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /></Head>
       <style>{CSS}</style>
       <div className="bg" />
-      <div className="login-screen">
+      <div style={{
+        position: 'relative', zIndex: 1, height: '100dvh',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '40px 24px', overflow: 'hidden',
+        transform: sliding ? 'translateY(-100%)' : 'translateY(0)',
+        transition: sliding ? 'transform 0.45s cubic-bezier(0.16,1,0.3,1)' : 'none'
+      }}>
+        <TrainCanvas />
+        <div style={{fontSize:'clamp(72px,20vw,120px)',fontWeight:700,letterSpacing:'-4px',color:'#fff',lineHeight:1,marginBottom:16,position:'relative',zIndex:2,userSelect:'none',fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>newton</div>
+        <div style={{fontSize:15,color:'rgba(255,255,255,0.4)',fontWeight:400,letterSpacing:'0.2px',marginBottom:48,textAlign:'center',position:'relative',zIndex:2,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>Master of none. Capable of all.</div>
+        <div style={{display:'flex',gap:12,width:'100%',maxWidth:320,position:'relative',zIndex:2}}>
+          <button onClick={() => goToLogin('login')} style={{flex:1,padding:'14px 10px',borderRadius:16,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.95)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.12)',transition:'all 0.15s'}}>sign in</button>
+          <button onClick={() => goToLogin('request')} style={{flex:1,padding:'14px 10px',borderRadius:16,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.95)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.12)',transition:'all 0.15s'}}>get access</button>
+        </div>
+        <div style={{position:'absolute',bottom:28,fontSize:13,color:'rgba(255,255,255,0.3)',fontWeight:400,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",letterSpacing:'0.2px',zIndex:2}}>developed by Areed Hassan</div>
+      </div>
+    </>
+  );
+
+  // LOGIN
+  if (screen === 'login') return (
+    <>
+      <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /></Head>
+      <style>{CSS}</style>
+      <div className="bg" />
+      <div style={{
+        position:'relative',zIndex:1,minHeight:'100dvh',display:'flex',
+        alignItems:'center',justifyContent:'center',padding:'24px 20px',
+        animation: 'slideUpIn 0.45s cubic-bezier(0.16,1,0.3,1)'
+      }}>
+        <style>{`@keyframes slideUpIn { from { transform: translateY(100%); opacity:0; } to { transform: translateY(0); opacity:1; } }`}</style>
         <div className="login-card">
           <div className="login-logo">newton</div>
-          <div className="login-sub">{tab === "request" ? "want to talk to newton?" : "welcome back"}</div>
+          <div className="login-sub">{loginTab === 'request' ? 'want to talk to newton?' : 'welcome back'}</div>
+          <div className="login-dev">developed by Areed Hassan</div>
           <div className="seg-control">
-            <button className={`seg-btn ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setStatusMsg(''); }}>login</button>
-            <button className={`seg-btn ${tab === 'request' ? 'active' : ''}`} onClick={() => { setTab('request'); setStatusMsg(''); }}>request access</button>
+            <button className={`seg-btn ${loginTab === 'login' ? 'active' : ''}`} onClick={() => { setLoginTab('login'); setStatusMsg(''); }}>login</button>
+            <button className={`seg-btn ${loginTab === 'request' ? 'active' : ''}`} onClick={() => { setLoginTab('request'); setStatusMsg(''); }}>request access</button>
           </div>
-          {tab === 'login' ? (
+          {loginTab === 'login' ? (
             <form onSubmit={handleLogin}>
               <div className="field">
                 <label className="field-label">email</label>
@@ -845,9 +964,7 @@ export default function App() {
                     <input className="field-input" name="lastName" placeholder="last name" required />
                   </div>
                 </div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginTop:6,lineHeight:1.5,paddingLeft:2}}>
-                  use your real name. that's how you get invited.
-                </div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginTop:6,lineHeight:1.5,paddingLeft:2}}>use your real name. that's how you get invited.</div>
               </div>
               <div className="field">
                 <label className="field-label">email</label>
@@ -862,13 +979,10 @@ export default function App() {
     </>
   );
 
-  // CHAT SCREEN
+  // CHAT
   return (
     <>
-      <Head>
-        <title>newton</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-      </Head>
+      <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" /></Head>
       <style>{CSS}</style>
       <div className="bg" />
       <div className="app">
@@ -881,12 +995,11 @@ export default function App() {
             </div>
           </div>
           <div className="header-right">
-            <button className={`hbtn ${memFlash ? 'flashing' : ''}`} onClick={() => openSheet(sheet === 'memory' ? null : 'memory')} title="what newton remembers about you">🧠</button>
-            <button className="hbtn" onClick={() => setShowSessions(p => !p)} title="chats">💬</button>
-            {isAdmin && <button className="hbtn" onClick={() => openSheet(sheet === 'story' ? null : 'story')} title="shared story">📖</button>}
+            <button className={`hbtn ${memFlash ? 'flashing' : ''}`} onClick={() => openSheet(sheet === 'memory' ? null : 'memory')}>🧠</button>
+            <button className="hbtn" onClick={() => setShowSessions(p => !p)}>💬</button>
+            {isAdmin && <button className="hbtn" onClick={() => openSheet(sheet === 'story' ? null : 'story')}>📖</button>}
           </div>
         </div>
-
         <div className="msgs">
           {msgs.length === 0 && (
             <div className="empty">
@@ -896,28 +1009,12 @@ export default function App() {
             </div>
           )}
           {renderMessages()}
-          {loading && (
-            <div className="msg-row typing-row">
-              <div className="typing-bubble">
-                <div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" />
-              </div>
-            </div>
-          )}
+          {loading && <div className="msg-row typing-row"><div className="typing-bubble"><div className="typing-dot"/><div className="typing-dot"/><div className="typing-dot"/></div></div>}
           <div ref={bottomRef} />
         </div>
-
         <div className="input-area">
           <div className="input-wrap">
-            <textarea
-              ref={el => { taRef.current = el; inputRef.current = el; }}
-              className="input-textarea"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={onKey}
-              placeholder="message newton..."
-              rows={1}
-              disabled={loading}
-            />
+            <textarea ref={el => { taRef.current = el; inputRef.current = el; }} className="input-textarea" value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} placeholder="message newton..." rows={1} disabled={loading} />
             <button className="send-btn" onClick={send} disabled={loading || !input.trim()}>↑</button>
           </div>
         </div>
@@ -931,42 +1028,26 @@ export default function App() {
               <div className="sess-title">chats</div>
               <button className="sess-close" onClick={() => setShowSessions(false)}>✕</button>
             </div>
-            <button className="new-chat-btn" onClick={newChat}>
-              <span>✏️</span> new chat
-            </button>
+            <button className="new-chat-btn" onClick={newChat}><span>✏️</span> new chat</button>
             <div className="sess-list">
               {sessions.map(s => (
-                <div key={s.id} className={`sess-item ${currentSession?.id === s.id ? 'active' : ''}`}
-                  onClick={() => { if (renamingId !== s.id) switchSession(s); }}>
+                <div key={s.id} className={`sess-item ${currentSession?.id === s.id ? 'active' : ''}`} onClick={() => { if (renamingId !== s.id) switchSession(s); }}>
                   <div className="sess-item-icon">💬</div>
                   <div className="sess-item-info">
                     {renamingId === s.id ? (
-                      <input
-                        autoFocus
-                        value={renameVal}
-                        onChange={e => setRenameVal(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') renameSession(s.id, renameVal);
-                          if (e.key === 'Escape') setRenamingId(null);
-                          e.stopPropagation();
-                        }}
-                        onClick={e => e.stopPropagation()}
-                        style={{ background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontFamily: 'inherit', fontSize: 13, width: '100%' }}
-                      />
+                      <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') renameSession(s.id, renameVal); if (e.key === 'Escape') setRenamingId(null); e.stopPropagation(); }} onClick={e => e.stopPropagation()} style={{background:'transparent',border:'none',outline:'none',color:'#fff',fontFamily:'inherit',fontSize:13,width:'100%'}} />
                     ) : (
                       <div className="sess-item-name" onDoubleClick={e => { e.stopPropagation(); setRenamingId(s.id); setRenameVal(s.name || ''); }}>
                         {s.name || <span style={{color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>naming...</span>}
                       </div>
                     )}
-                    <div className="sess-item-meta" suppressHydrationWarning>{s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</div>
+                    <div className="sess-item-meta" suppressHydrationWarning>{s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : ''}</div>
                   </div>
                   <button className="sess-delete" onClick={e => { e.stopPropagation(); deleteSession(s.id); }}>🗑</button>
                 </div>
               ))}
             </div>
-            <button onClick={logout} style={{ margin: '12px 16px 16px', padding: '10px', background: 'rgba(255,60,60,0.1)', border: '1px solid rgba(255,60,60,0.2)', borderRadius: '10px', color: '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer', width: 'calc(100% - 32px)', textAlign: 'center' }}>
-              logout
-            </button>
+            <button onClick={logout} style={{margin:'12px 16px 16px',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer',width:'calc(100% - 32px)',textAlign:'center'}}>logout</button>
           </div>
         </>
       )}
@@ -981,20 +1062,12 @@ export default function App() {
               <button className="sheet-close" onClick={() => setSheet(null)}>✕</button>
             </div>
             <div className="sheet-body">
-              {sheet === 'memory'
-                ? (<>
-                    {myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>}
-                    <button onClick={async () => {
-                      if (!confirm('clear everything newton knows about you?')) return;
-                      await fetch('/api/clear-memory', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-                      setMyMemory('');
-                      setSheet(null);
-                    }} style={{marginTop:20,width:'100%',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer',fontFamily:'var(--font)'}}>
-                      clear memory
-                    </button>
-                  </>)
-                : (storyData || <span className="sheet-empty">no story built yet.</span>)
-              }
+              {sheet === 'memory' ? (
+                <>
+                  {myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>}
+                  <button onClick={async () => { if (!confirm('clear everything newton knows about you?')) return; await fetch('/api/clear-memory',{method:'POST',headers:{Authorization:`Bearer ${token}`}}); setMyMemory(''); setSheet(null); }} style={{marginTop:20,width:'100%',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer',fontFamily:'var(--font)'}}>clear memory</button>
+                </>
+              ) : (storyData || <span className="sheet-empty">no story built yet.</span>)}
             </div>
           </div>
         </>
