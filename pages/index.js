@@ -1,6 +1,11 @@
-// pages/index.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useAuth } from '../hooks/useAuth';
+import { useSessions } from '../hooks/useSessions';
+import LandingScreen from '../components/LandingScreen';
+import LoginScreen from '../components/LoginScreen';
+import ChatScreen from '../components/ChatScreen';
+import BanChecker from '../components/BanChecker';
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -27,10 +32,7 @@ const CSS = `
   }
 
   .bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
+    position: fixed; inset: 0; z-index: 0; overflow: hidden;
   }
   .bg::before {
     content: '';
@@ -44,10 +46,7 @@ const CSS = `
     animation: meshFloat 18s ease-in-out infinite alternate;
   }
   .bg::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
+    content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.45);
   }
   @keyframes meshFloat {
     0% { transform: translate(0,0) rotate(0deg); }
@@ -57,115 +56,22 @@ const CSS = `
   }
 
   .app {
-    position: relative;
-    z-index: 1;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    max-width: 680px;
-    margin: 0 auto;
+    position: relative; z-index: 1; height: 100dvh;
+    display: flex; flex-direction: column;
+    max-width: 680px; margin: 0 auto;
   }
   @media (min-width: 720px) {
     .app { border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); }
-    .header { border-radius: 0; }
     .input-area { padding-bottom: 20px; }
   }
 
-  /* LANDING */
-  .landing-screen {
-    position: relative;
-    z-index: 1;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-    overflow: hidden;
-  }
-  .landing-hero {
-    font-size: clamp(72px, 20vw, 120px);
-    font-weight: 700;
-    letter-spacing: -4px;
-    color: #fff;
-    line-height: 1;
-    margin-bottom: 16px;
-    position: relative;
-    z-index: 2;
-    user-select: none;
-  }
-  .landing-quote {
-    font-size: 15px;
-    color: rgba(255,255,255,0.4);
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    margin-bottom: 48px;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-  }
-  .landing-buttons {
-    display: flex;
-    gap: 12px;
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    max-width: 320px;
-  }
-  .land-btn {
-    flex: 1;
-    padding: 14px 10px;
-    border-radius: 16px;
-    font-family: var(--font);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-    color: var(--text);
-    backdrop-filter: var(--blur-sm);
-    -webkit-backdrop-filter: var(--blur-sm);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-  }
-  .land-btn:active { transform: scale(0.97); opacity: 0.8; }
-  .landing-dev {
-    position: absolute;
-    bottom: 28px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.3);
-    font-weight: 400;
-    z-index: 2;
-    letter-spacing: 0.2px;
-  }
+  .trains-canvas { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
-  /* trains canvas */
-  .trains-canvas {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  /* LOGIN */
-  .login-screen {
-    position: relative;
-    z-index: 1;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 20px;
-  }
   .login-card {
-    width: 100%;
-    max-width: 380px;
+    width: 100%; max-width: 380px;
     background: rgba(255,255,255,0.07);
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 28px;
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border); border-radius: 28px;
     padding: 40px 32px 36px;
     box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
   }
@@ -173,12 +79,8 @@ const CSS = `
   .login-sub { font-size: 13px; color: var(--text-3); font-weight: 400; margin-bottom: 8px; letter-spacing: 0.2px; }
   .login-dev { font-size: 13px; color: rgba(255,255,255,0.3); font-weight: 400; margin-bottom: 24px; letter-spacing: 0.2px; }
   .seg-control {
-    display: flex;
-    background: rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 3px;
-    margin-bottom: 28px;
-    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; background: rgba(255,255,255,0.06); border-radius: 12px;
+    padding: 3px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.08);
   }
   .seg-btn {
     flex: 1; padding: 8px; border: none; border-radius: 10px;
@@ -194,8 +96,7 @@ const CSS = `
   }
   .field-input {
     width: 100%; padding: 13px 16px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px; color: var(--text);
     font-family: var(--font); font-size: 15px; font-weight: 400;
     outline: none; transition: all 0.2s; -webkit-appearance: none;
@@ -220,24 +121,6 @@ const CSS = `
   }
   .status-msg.ok { color: rgba(120,255,160,0.9); background: rgba(60,255,120,0.06); border-color: rgba(60,255,120,0.12); }
 
-  /* slide transition */
-  .slide-container {
-    position: relative;
-    width: 100%;
-    height: 100dvh;
-    overflow: hidden;
-  }
-  .slide-page {
-    position: absolute;
-    inset: 0;
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
-  }
-  .slide-page.landing-page { transform: translateY(0); }
-  .slide-page.landing-page.exit { transform: translateY(-100%); }
-  .slide-page.login-page { transform: translateY(100%); }
-  .slide-page.login-page.enter { transform: translateY(0); }
-
-  /* CHAT */
   .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 20px 14px;
@@ -248,8 +131,7 @@ const CSS = `
   }
   .header-left { display: flex; align-items: center; gap: 10px; }
   .avatar {
-    width: 38px; height: 38px;
-    background: rgba(255,255,255,0.1);
+    width: 38px; height: 38px; background: rgba(255,255,255,0.1);
     backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 18px; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;
@@ -258,10 +140,9 @@ const CSS = `
   .header-status { font-size: 12px; color: var(--text-3); font-weight: 400; }
   .header-right { display: flex; gap: 6px; }
   .hbtn {
-    width: 36px; height: 36px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
     font-size: 15px; cursor: pointer; transition: all 0.15s;
     color: var(--text-2); flex-shrink: 0;
   }
@@ -487,591 +368,100 @@ const CSS = `
   .sess-item:hover .sess-delete, .sess-item:active .sess-delete { opacity: 1; }
 `;
 
-function TrainCanvas() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animId;
-    const trains = [];
-
-    function resize() {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    function spawnTrain() {
-      const y = Math.random() * canvas.height;
-      const speed = 280 + Math.random() * 200;
-      const goingRight = Math.random() > 0.5;
-      trains.push({
-        x: goingRight ? -60 : canvas.width + 60,
-        y,
-        speed: goingRight ? speed : -speed,
-        trail: [],
-        length: 60 + Math.random() * 40,
-        opacity: 0.7 + Math.random() * 0.3
-      });
-    }
-
-    // seed initial trains staggered
-    for (let i = 0; i < 4; i++) {
-      setTimeout(spawnTrain, i * 1200);
-    }
-
-    // keep spawning
-    const spawnInterval = setInterval(() => {
-      if (trains.length < 6) spawnTrain();
-    }, 1400);
-
-    let last = performance.now();
-    function draw(now) {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = trains.length - 1; i >= 0; i--) {
-        const t = trains[i];
-        t.x += t.speed * dt;
-        t.trail.unshift({ x: t.x, y: t.y });
-        if (t.trail.length > 40) t.trail.pop();
-
-        // draw trail
-        for (let j = 0; j < t.trail.length - 1; j++) {
-          const alpha = (1 - j / t.trail.length) * t.opacity * 0.8;
-          const width = (1 - j / t.trail.length) * 2.5;
-          ctx.beginPath();
-          ctx.moveTo(t.trail[j].x, t.trail[j].y);
-          ctx.lineTo(t.trail[j + 1].x, t.trail[j + 1].y);
-          ctx.strokeStyle = `rgba(80,160,255,${alpha})`;
-          ctx.lineWidth = width;
-          ctx.lineCap = 'round';
-          ctx.stroke();
-        }
-
-        // draw glowing head
-        const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, 10);
-        grad.addColorStop(0, `rgba(140,200,255,${t.opacity})`);
-        grad.addColorStop(0.4, `rgba(60,140,255,${t.opacity * 0.6})`);
-        grad.addColorStop(1, 'rgba(0,80,255,0)');
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // remove if off screen
-        if ((t.speed > 0 && t.x > canvas.width + 80) || (t.speed < 0 && t.x < -80)) {
-          trains.splice(i, 1);
-        }
-      }
-
-      animId = requestAnimationFrame(draw);
-    }
-    animId = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      clearInterval(spawnInterval);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="trains-canvas" style={{width:'100%',height:'100%'}} />;
-}
-
-function BanChecker({ onUnbanned }) {
-  useEffect(() => {
-    const email = (() => { try { return JSON.parse(localStorage.getItem('nt_usr'))?.email; } catch { return null; } })();
-    if (!email) return;
-    const iv = setInterval(async () => {
-      try {
-        const r = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: email, password: '___check___' })
-        });
-        const d = await r.json();
-        if (d.error !== 'banned') onUnbanned();
-      } catch {}
-    }, 8000);
-    return () => clearInterval(iv);
-  }, []);
-  return null;
-}
-
 export default function App() {
-  const [screen, setScreen] = useState('landing');
-  const [loginTab, setLoginTab] = useState('login');
   const [sliding, setSliding] = useState(false);
-  const [banReason, setBanReason] = useState('');
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [msgs, setMsgs] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
-  const [statusOk, setStatusOk] = useState(false);
-  const [sheet, setSheet] = useState(null);
-  const [myMemory, setMyMemory] = useState('');
-  const [storyData, setStoryData] = useState('');
-  const [memFlash, setMemFlash] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [sessions, setSessions] = useState([]);
-  const [currentSession, setCurrentSession] = useState(null);
-  const [showSessions, setShowSessions] = useState(false);
-  const [renamingId, setRenamingId] = useState(null);
-  const [renameVal, setRenameVal] = useState('');
-  const [copiedIdx, setCopiedIdx] = useState(null);
-  const bottomRef = useRef(null);
-  const inputRef = useRef(null);
-  const taRef = useRef(null);
+  const [loginTab, setLoginTab] = useState('login');
+
+  const {
+    user, token, isAdmin, screen, setScreen,
+    banReason, logout, handleBan, handleLoginSuccess, handleUnban
+  } = useAuth();
+
+  const {
+    sessions, setSessions,
+    currentSession, setCurrentSession,
+    msgs, setMsgs,
+    showSessions, setShowSessions,
+    loadSessions, switchSession, newChat, deleteSession, renameSession
+  } = useSessions(token);
 
   useEffect(() => {
-    const t = localStorage.getItem('nt_tok');
-    const u = localStorage.getItem('nt_usr');
-    const admin = localStorage.getItem('nt_admin');
-    const banned = localStorage.getItem('nt_banned');
-    if (banned !== null) { setBanReason(banned); setScreen('banned'); return; }
-    if (t && u) {
-      setToken(t); setUser(JSON.parse(u));
-      setIsAdmin(admin === 'true');
-      setScreen('chat');
-      loadSessions(t);
-    }
-  }, []);
-
-  useEffect(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-  }, [msgs]);
-
-  useEffect(() => {
-    if (taRef.current) {
-      taRef.current.style.height = 'auto';
-      taRef.current.style.height = Math.min(taRef.current.scrollHeight, 120) + 'px';
-    }
-  }, [input]);
+    if (screen === 'chat' && token) loadSessions(token);
+  }, [screen, token]);
 
   function goToLogin(tab) {
     setLoginTab(tab);
-    setStatusMsg('');
     setSliding(true);
     setTimeout(() => { setScreen('login'); setSliding(false); }, 450);
   }
 
-  async function loadSessions(t) {
-    try {
-      const r = await fetch('/api/sessions', { headers: { Authorization: `Bearer ${t || token}` } });
-      const d = await r.json();
-      if (d.sessions) {
-        setSessions(d.sessions);
-        if (d.sessions.length > 0) {
-          setCurrentSession(d.sessions[0]);
-          await loadSessionHistory(d.sessions[0].id, t || token);
-        }
-      }
-    } catch {}
-  }
-
-  async function loadSessionHistory(sessionId, t) {
-    try {
-      const r = await fetch(`/api/history?sessionId=${sessionId}`, { headers: { Authorization: `Bearer ${t || token}` } });
-      const d = await r.json();
-      if (d.messages) setMsgs(d.messages);
-    } catch {}
-  }
-
-  async function switchSession(session) {
-    setCurrentSession(session); setMsgs([]); setShowSessions(false);
-    await loadSessionHistory(session.id);
-  }
-
-  async function newChat() {
-    try {
-      const r = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'create' })
-      });
-      const d = await r.json();
-      if (d.session) { setSessions(p => [d.session, ...p]); setCurrentSession(d.session); setMsgs([]); setShowSessions(false); }
-    } catch {}
-  }
-
-  async function deleteSession(sessionId) {
-    try {
-      await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'delete', sessionId })
-      });
-      const remaining = sessions.filter(s => s.id !== sessionId);
-      setSessions(remaining);
-      if (currentSession?.id === sessionId) {
-        if (remaining.length > 0) { setCurrentSession(remaining[0]); loadSessionHistory(remaining[0].id); }
-        else newChat();
-      }
-    } catch {}
-  }
-
-  async function renameSession(sessionId, name) {
-    try {
-      await fetch('/api/rename-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ sessionId, name })
-      });
-      setSessions(p => p.map(s => s.id === sessionId ? { ...s, name } : s));
-      if (currentSession?.id === sessionId) setCurrentSession(p => ({ ...p, name }));
-      setRenamingId(null);
-    } catch {}
-  }
-
-  async function loadMyMemory() {
-    try { const r = await fetch('/api/my-memory', { headers: { Authorization: `Bearer ${token}` } }); const d = await r.json(); setMyMemory(d.memory || ''); } catch {}
-  }
-
-  async function loadStory() {
-    try { const r = await fetch('/api/lore', { headers: { Authorization: `Bearer ${token}` } }); const d = await r.json(); setStoryData(d.story || ''); } catch {}
-  }
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    const f = e.target;
-    setLoading(true); setStatusMsg('');
-    try {
-      const r = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: f.name.value.trim().toLowerCase(), password: f.password.value })
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        if (d.error === 'banned') { localStorage.setItem('nt_banned', d.banReason || ''); setBanReason(d.banReason || ''); setScreen('banned'); }
-        else { setStatusMsg(d.error); setStatusOk(false); }
-      } else {
-        localStorage.setItem('nt_tok', d.token);
-        localStorage.setItem('nt_usr', JSON.stringify(d.user));
-        localStorage.setItem('nt_admin', d.isAdmin ? 'true' : 'false');
-        setToken(d.token); setUser(d.user); setIsAdmin(!!d.isAdmin);
-        setScreen('chat'); loadSessions(d.token);
-      }
-    } catch { setStatusMsg('something went wrong. try again.'); setStatusOk(false); }
-    setLoading(false);
-  }
-
-  async function handleRequest(e) {
-    e.preventDefault();
-    const f = e.target;
-    setLoading(true); setStatusMsg('');
-    try {
-      const r = await fetch('/api/request-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: (f.firstName.value.trim() + ' ' + f.lastName.value.trim()), email: f.email.value.trim() })
-      });
-      const d = await r.json();
-      if (!r.ok) { setStatusMsg(d.error); setStatusOk(false); }
-      else { setStatusMsg('request sent. you will get an invite link once approved.'); setStatusOk(true); }
-    } catch { setStatusMsg('error. try again.'); setStatusOk(false); }
-    setLoading(false);
-  }
-
-  async function send() {
-    const msg = input.trim();
-    if (!msg || loading) return;
-    setInput(''); setLoading(true);
-    setMsgs(p => [...p, { role: 'user', content: msg, ts: Date.now() }]);
-    try {
-      let sessionId = currentSession?.id;
-      if (!sessionId) {
-        try {
-          const sr = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'create' }) });
-          const sd = await sr.json();
-          if (sd.session) { setCurrentSession(sd.session); setSessions(p => [sd.session, ...p]); sessionId = sd.session.id; }
-        } catch {}
-      }
-      const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ message: msg, sessionId }) });
-      const d = await r.json();
-      if (d.response) {
-        setMsgs(p => [...p, { role: 'assistant', content: d.response, ts: Date.now() }]);
-        if (d.memoryUpdated) { setMemFlash(true); setTimeout(() => setMemFlash(false), 3000); }
-        setTimeout(() => { fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); }).catch(() => {}); }, 2000);
-      } else if (d.error === 'banned') {
-        localStorage.setItem('nt_banned', d.banReason || ''); setBanReason(d.banReason || ''); setScreen('banned');
-      } else {
-        setMsgs(p => [...p, { role: 'assistant', content: d.error || 'something broke.', ts: Date.now() }]);
-      }
-    } catch { setMsgs(p => [...p, { role: 'assistant', content: 'lost connection. try again.', ts: Date.now() }]); }
-    setLoading(false);
-    inputRef.current?.focus();
-  }
-
-  function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-
-  function logout() {
-    if (!confirm('sure you want to log out?')) return;
-    ['nt_tok','nt_usr','nt_admin','nt_banned'].forEach(k => localStorage.removeItem(k));
-    setToken(null); setUser(null); setScreen('landing'); setMsgs([]); setSessions([]); setCurrentSession(null);
-  }
-
-  function openSheet(s) { setSheet(s); if (s === 'memory') loadMyMemory(); if (s === 'story') loadStory(); }
-
-  function fmt(ts) { if (!ts) return ''; return new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); }
-
-  function fmtDate(ts) {
-    const d = new Date(ts), today = new Date(), yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    if (d.toDateString() === today.toDateString()) return 'today';
-    if (d.toDateString() === yesterday.toDateString()) return 'yesterday';
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  }
-
-  function copyMsg(content, idx) { navigator.clipboard.writeText(content); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1500); }
-
-  function inlineMarkdown(text, keyPrefix) {
-    const parts = []; const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-    let last = 0, match, ki = 0;
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > last) parts.push(text.slice(last, match.index));
-      if (match[2]) parts.push(<strong key={`${keyPrefix}-b-${ki++}`}>{match[2]}</strong>);
-      else if (match[3]) parts.push(<em key={`${keyPrefix}-i-${ki++}`}>{match[3]}</em>);
-      else if (match[4]) parts.push(<code key={`${keyPrefix}-c-${ki++}`}>{match[4]}</code>);
-      last = match.index + match[0].length;
-    }
-    if (last < text.length) parts.push(text.slice(last));
-    return parts.length ? parts : text;
-  }
-
-  function renderMarkdown(text, msgIdx) {
-    const lines = text.split('\n'); const result = []; let i = 0;
-    while (i < lines.length) {
-      const line = lines[i];
-      if (line.match(/^[-*]\s+/)) {
-        const items = [];
-        while (i < lines.length && lines[i].match(/^[-*]\s+/)) { items.push(lines[i].replace(/^[-*]\s+/, '')); i++; }
-        result.push(<ul key={`ul-${i}`}>{items.map((item, j) => <li key={j}>{inlineMarkdown(item, `ul-${i}-${j}`)}</li>)}</ul>);
-        continue;
-      }
-      if (line.trim() === '') { result.push(<br key={`br-${i}`} />); i++; continue; }
-      result.push(<span key={`l-${i}`} style={{display:'block'}}>{inlineMarkdown(line, `l-${i}`)}</span>);
-      i++;
-    }
-    return result;
-  }
-
-  function renderMessages() {
-    const out = []; let lastDate = null;
-    msgs.forEach((m, i) => {
-      const d = m.ts ? new Date(m.ts).toDateString() : null;
-      if (d && d !== lastDate) { out.push(<div key={`sep-${i}`} className="date-sep"><span>{fmtDate(m.ts)}</span></div>); lastDate = d; }
-      out.push(
-        <div key={i} className={`msg-row ${m.role === 'user' ? 'user' : 'newton'}`}>
-          <div className="msg-bubble">{m.role === 'assistant' ? renderMarkdown(m.content, i) : m.content}</div>
-          <div className="msg-meta">
-            <div className="msg-time">{fmt(m.ts)}</div>
-            {m.role === 'assistant' && <button className="copy-btn" onClick={() => copyMsg(m.content, i)}>{copiedIdx === i ? '✓' : '⧉'}</button>}
-          </div>
-        </div>
-      );
-    });
-    return out;
-  }
-
-  // BANNED
   if (screen === 'banned') return (
     <>
       <Head><title>newton</title></Head>
       <style>{CSS}</style>
-      <BanChecker onUnbanned={() => { localStorage.removeItem('nt_banned'); localStorage.removeItem('nt_tok'); localStorage.removeItem('nt_usr'); localStorage.removeItem('nt_admin'); setScreen('landing'); }} />
-      <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>
-        <div style={{fontSize:32,fontWeight:700,color:'#fff',letterSpacing:-1,marginBottom:banReason?10:0}}>you are banned</div>
-        {banReason && <div style={{fontSize:14,color:'#444',textAlign:'center',maxWidth:280,lineHeight:1.6}}>{banReason}</div>}
+      <BanChecker onUnbanned={handleUnban} />
+      <div style={{
+        position: 'fixed', inset: 0, background: '#000',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: 32, fontFamily: "'Plus Jakarta Sans',-apple-system,sans-serif"
+      }}>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', letterSpacing: -1, marginBottom: banReason ? 10 : 0 }}>you are banned</div>
+        {banReason && <div style={{ fontSize: 14, color: '#444', textAlign: 'center', maxWidth: 280, lineHeight: 1.6 }}>{banReason}</div>}
       </div>
     </>
   );
 
-  // LANDING
   if (screen === 'landing') return (
     <>
       <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /></Head>
       <style>{CSS}</style>
       <div className="bg" />
-      <div style={{
-        position: 'relative', zIndex: 1, height: '100dvh',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 24px', overflow: 'hidden',
-        transform: sliding ? 'translateY(-100%)' : 'translateY(0)',
-        transition: sliding ? 'transform 0.45s cubic-bezier(0.16,1,0.3,1)' : 'none'
-      }}>
-        <TrainCanvas />
-        <div style={{fontSize:'clamp(72px,20vw,120px)',fontWeight:700,letterSpacing:'-4px',color:'#fff',lineHeight:1,marginBottom:16,position:'relative',zIndex:2,userSelect:'none',fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>newton</div>
-        <div style={{fontSize:15,color:'rgba(255,255,255,0.4)',fontWeight:400,letterSpacing:'0.2px',marginBottom:48,textAlign:'center',position:'relative',zIndex:2,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif"}}>Master of none. Capable of all.</div>
-        <div style={{display:'flex',gap:12,width:'100%',maxWidth:320,position:'relative',zIndex:2}}>
-          <button onClick={() => goToLogin('login')} style={{flex:1,padding:'14px 10px',borderRadius:16,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.95)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.12)',transition:'all 0.15s'}}>sign in</button>
-          <button onClick={() => goToLogin('request')} style={{flex:1,padding:'14px 10px',borderRadius:16,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",fontSize:15,fontWeight:600,cursor:'pointer',textAlign:'center',border:'1px solid rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.95)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.12)',transition:'all 0.15s'}}>get access</button>
-        </div>
-        <div style={{position:'absolute',bottom:28,fontSize:13,color:'rgba(255,255,255,0.3)',fontWeight:400,fontFamily:"'Plus Jakarta Sans',-apple-system,sans-serif",letterSpacing:'0.2px',zIndex:2}}>developed by Areed Hassan</div>
-      </div>
+      <LandingScreen
+        sliding={sliding}
+        onLogin={() => goToLogin('login')}
+        onRequest={() => goToLogin('request')}
+      />
     </>
   );
 
-  // LOGIN
   if (screen === 'login') return (
     <>
       <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /></Head>
       <style>{CSS}</style>
       <div className="bg" />
-      <div style={{
-        position:'relative',zIndex:1,minHeight:'100dvh',display:'flex',
-        alignItems:'center',justifyContent:'center',padding:'24px 20px',
-        animation: 'slideUpIn 0.45s cubic-bezier(0.16,1,0.3,1)'
-      }}>
-        <style>{`@keyframes slideUpIn { from { transform: translateY(100%); opacity:0; } to { transform: translateY(0); opacity:1; } }`}</style>
-        <div className="login-card">
-          <div className="login-logo">newton</div>
-          <div className="login-sub">{loginTab === 'request' ? 'want to talk to newton?' : 'welcome back'}</div>
-          <div className="login-dev">developed by Areed Hassan</div>
-          <div className="seg-control">
-            <button className={`seg-btn ${loginTab === 'login' ? 'active' : ''}`} onClick={() => { setLoginTab('login'); setStatusMsg(''); }}>login</button>
-            <button className={`seg-btn ${loginTab === 'request' ? 'active' : ''}`} onClick={() => { setLoginTab('request'); setStatusMsg(''); }}>request access</button>
-          </div>
-          {loginTab === 'login' ? (
-            <form onSubmit={handleLogin}>
-              <div className="field">
-                <label className="field-label">email</label>
-                <input className="field-input" name="name" type="email" placeholder="your email address" autoComplete="email" required />
-              </div>
-              <div className="field">
-                <label className="field-label">password</label>
-                <input className="field-input" name="password" type="password" placeholder="••••••••" required />
-              </div>
-              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'sign in'}</button>
-              {statusMsg && <div className={`status-msg ${statusOk ? 'ok' : ''}`}>{statusMsg}</div>}
-            </form>
-          ) : (
-            <form onSubmit={handleRequest}>
-              <div className="field">
-                <div style={{display:'flex',gap:10}}>
-                  <div style={{flex:1}}>
-                    <label className="field-label">first name</label>
-                    <input className="field-input" name="firstName" placeholder="first name" required />
-                  </div>
-                  <div style={{flex:1}}>
-                    <label className="field-label">last name</label>
-                    <input className="field-input" name="lastName" placeholder="last name" required />
-                  </div>
-                </div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.28)',marginTop:6,lineHeight:1.5,paddingLeft:2}}>use your real name. that's how you get invited.</div>
-              </div>
-              <div className="field">
-                <label className="field-label">email</label>
-                <input className="field-input" name="email" type="email" placeholder="your email address" required />
-              </div>
-              <button className="primary-btn" type="submit" disabled={loading}>{loading ? '...' : 'send request'}</button>
-              {statusMsg && <div className={`status-msg ${statusOk ? 'ok' : ''}`}>{statusMsg}</div>}
-            </form>
-          )}
-        </div>
-      </div>
+      <LoginScreen
+        loginTab={loginTab}
+        setLoginTab={setLoginTab}
+        onLoginSuccess={(data) => { handleLoginSuccess(data); loadSessions(data.token); }}
+        onBan={handleBan}
+      />
     </>
   );
 
-  // CHAT
   return (
     <>
       <Head><title>newton</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" /></Head>
       <style>{CSS}</style>
       <div className="bg" />
-      <div className="app">
-        <div className="header">
-          <div className="header-left">
-            <div className="avatar">⚛</div>
-            <div className="header-info">
-              <div className="header-name">newton</div>
-              <div className="header-status">{loading ? 'typing...' : (currentSession?.name || 'new chat')}</div>
-            </div>
-          </div>
-          <div className="header-right">
-            <button className={`hbtn ${memFlash ? 'flashing' : ''}`} onClick={() => openSheet(sheet === 'memory' ? null : 'memory')}>🧠</button>
-            <button className="hbtn" onClick={() => setShowSessions(p => !p)}>💬</button>
-            {isAdmin && <button className="hbtn" onClick={() => openSheet(sheet === 'story' ? null : 'story')}>📖</button>}
-          </div>
-        </div>
-        <div className="msgs">
-          {msgs.length === 0 && (
-            <div className="empty">
-              <div className="empty-orb">⚛</div>
-              <div className="empty-title">newton</div>
-              <div className="empty-sub">say something.</div>
-            </div>
-          )}
-          {renderMessages()}
-          {loading && <div className="msg-row typing-row"><div className="typing-bubble"><div className="typing-dot"/><div className="typing-dot"/><div className="typing-dot"/></div></div>}
-          <div ref={bottomRef} />
-        </div>
-        <div className="input-area">
-          <div className="input-wrap">
-            <textarea ref={el => { taRef.current = el; inputRef.current = el; }} className="input-textarea" value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} placeholder="message newton..." rows={1} disabled={loading} />
-            <button className="send-btn" onClick={send} disabled={loading || !input.trim()}>↑</button>
-          </div>
-        </div>
-      </div>
-
-      {showSessions && (
-        <>
-          <div className="sess-overlay" onClick={() => setShowSessions(false)} />
-          <div className="sess-panel">
-            <div className="sess-header">
-              <div className="sess-title">chats</div>
-              <button className="sess-close" onClick={() => setShowSessions(false)}>✕</button>
-            </div>
-            <button className="new-chat-btn" onClick={newChat}><span>✏️</span> new chat</button>
-            <div className="sess-list">
-              {sessions.map(s => (
-                <div key={s.id} className={`sess-item ${currentSession?.id === s.id ? 'active' : ''}`} onClick={() => { if (renamingId !== s.id) switchSession(s); }}>
-                  <div className="sess-item-icon">💬</div>
-                  <div className="sess-item-info">
-                    {renamingId === s.id ? (
-                      <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') renameSession(s.id, renameVal); if (e.key === 'Escape') setRenamingId(null); e.stopPropagation(); }} onClick={e => e.stopPropagation()} style={{background:'transparent',border:'none',outline:'none',color:'#fff',fontFamily:'inherit',fontSize:13,width:'100%'}} />
-                    ) : (
-                      <div className="sess-item-name" onDoubleClick={e => { e.stopPropagation(); setRenamingId(s.id); setRenameVal(s.name || ''); }}>
-                        {s.name || <span style={{color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>naming...</span>}
-                      </div>
-                    )}
-                    <div className="sess-item-meta" suppressHydrationWarning>{s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : ''}</div>
-                  </div>
-                  <button className="sess-delete" onClick={e => { e.stopPropagation(); deleteSession(s.id); }}>🗑</button>
-                </div>
-              ))}
-            </div>
-            <button onClick={logout} style={{margin:'12px 16px 16px',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer',width:'calc(100% - 32px)',textAlign:'center'}}>logout</button>
-          </div>
-        </>
-      )}
-
-      {sheet && (
-        <>
-          <div className="sheet-overlay" onClick={() => setSheet(null)} />
-          <div className="sheet">
-            <div className="sheet-handle" />
-            <div className="sheet-header">
-              <div className="sheet-title">{sheet === 'memory' ? '🧠  what newton knows about you' : '📖  shared story'}</div>
-              <button className="sheet-close" onClick={() => setSheet(null)}>✕</button>
-            </div>
-            <div className="sheet-body">
-              {sheet === 'memory' ? (
-                <>
-                  {myMemory || <span className="sheet-empty">newton doesn't know anything about you yet. start talking.</span>}
-                  <button onClick={async () => { if (!confirm('clear everything newton knows about you?')) return; await fetch('/api/clear-memory',{method:'POST',headers:{Authorization:`Bearer ${token}`}}); setMyMemory(''); setSheet(null); }} style={{marginTop:20,width:'100%',padding:'10px',background:'rgba(255,60,60,0.1)',border:'1px solid rgba(255,60,60,0.2)',borderRadius:'10px',color:'#f87171',fontSize:'13px',fontWeight:'600',cursor:'pointer',fontFamily:'var(--font)'}}>clear memory</button>
-                </>
-              ) : (storyData || <span className="sheet-empty">no story built yet.</span>)}
-            </div>
-          </div>
-        </>
-      )}
+      <ChatScreen
+        user={user}
+        token={token}
+        isAdmin={isAdmin}
+        sessions={sessions}
+        currentSession={currentSession}
+        setCurrentSession={setCurrentSession}
+        setSessions={setSessions}
+        msgs={msgs}
+        setMsgs={setMsgs}
+        showSessions={showSessions}
+        setShowSessions={setShowSessions}
+        switchSession={switchSession}
+        newChat={newChat}
+        deleteSession={deleteSession}
+        renameSession={renameSession}
+        handleBan={handleBan}
+        logout={logout}
+      />
     </>
   );
 }
