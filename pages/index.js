@@ -23,27 +23,11 @@ const CSS = `
   }
 
   html, body {
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: var(--font);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .bg {
-    position: fixed; inset: 0; z-index: 0; overflow: hidden;
-  }
-  .bg::before {
+.bg::before {
     content: '';
     position: absolute;
-    inset: -50%;
-    background:
-      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(120,80,255,0.25) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 60% at 80% 10%, rgba(0,160,255,0.2) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 40% at 60% 80%, rgba(255,80,120,0.15) 0%, transparent 55%),
-      radial-gradient(ellipse 40% 70% at 10% 70%, rgba(0,200,150,0.12) 0%, transparent 60%);
-    animation: meshFloat 18s ease-in-out infinite alternate;
+    inset: 0;
+    background: #000;
   }
   .bg::after {
     content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.45);

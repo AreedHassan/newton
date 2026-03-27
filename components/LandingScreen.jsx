@@ -1,5 +1,5 @@
-import AtomCanvas from './AtomCanvas';
-<AtomCanvas />
+import WaterCanvas from './WaterCanvas';
+<WaterCanvas />
 
 export default function LandingScreen({ sliding, onLogin, onRequest }) {
   return (
