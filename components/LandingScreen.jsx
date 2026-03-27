@@ -10,7 +10,7 @@ export default function LandingScreen({ sliding, onLogin, onRequest }) {
       transform: sliding ? 'translateY(-100%)' : 'translateY(0)',
       transition: sliding ? 'transform 0.45s cubic-bezier(0.16,1,0.3,1)' : 'none'
     }}>
-      <AtomCanvas />
+      <WaterCanvas />
       <div style={{
         fontSize: 'clamp(72px,20vw,120px)', fontWeight: 700, letterSpacing: '-4px',
         color: '#fff', lineHeight: 1, marginBottom: 16, position: 'relative', zIndex: 2,
