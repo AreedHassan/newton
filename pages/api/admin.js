@@ -91,7 +91,7 @@ export default async function handler(req, res) {
         const expiresAt = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
         await saveInvite(token, { email, name, expiresAt });
         await removeRequest(email);
-        const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://asknewton.vercel.app';
+        const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://ainewton.app';
         const link = `${site}/invite/${token}`;
         let emailSent = false;
         try { emailSent = await sendInviteEmail(email, name, link); } catch (e) { console.error(e); }
