@@ -1,7 +1,6 @@
 import LiquidCanvas from './LiquidCanvas';
-<LiquidCanvas />
 
-export default function LandingScreen({ sliding, onLogin, onRequest }) {
+export default function LandingScreen({ sliding, onLogin, onSignup }) {
   return (
     <div style={{
       position: 'relative', zIndex: 1, height: '100dvh',
@@ -32,7 +31,7 @@ export default function LandingScreen({ sliding, onLogin, onRequest }) {
           WebkitBackdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
           transition: 'all 0.15s'
         }}>sign in</button>
-        <button onClick={onRequest} style={{
+        <button onClick={onSignup} style={{
           flex: 1, padding: '14px 10px', borderRadius: 16,
           fontFamily: "'Plus Jakarta Sans',-apple-system,sans-serif",
           fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'center',
@@ -40,13 +39,8 @@ export default function LandingScreen({ sliding, onLogin, onRequest }) {
           color: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
           transition: 'all 0.15s'
-        }}>get access</button>
+        }}>sign up</button>
       </div>
-      <div style={{
-        position: 'absolute', bottom: 28, fontSize: 13, color: 'rgba(255,255,255,0.3)',
-        fontWeight: 400, fontFamily: "'Plus Jakarta Sans',-apple-system,sans-serif",
-        letterSpacing: '0.2px', zIndex: 2
-      }}>developed by Areed Hassan</div>
     </div>
   );
 }
