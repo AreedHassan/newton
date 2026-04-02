@@ -1,11 +1,17 @@
 // pages/api/login.js
 import bcrypt from 'bcryptjs';
-import { getUserByEmail } from '../../lib/db';
+import { getUserByEmail, saveUser } from '../../lib/db';
 import { signToken } from '../../lib/auth';
 
 function checkIsAdmin(name) {
   const adminName = process.env.ADMIN_NAME || 'Areed Hasan';
   return name.toLowerCase() === adminName.toLowerCase();
+}
+
+function getIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
 }
 
 export default async function handler(req, res) {
@@ -25,6 +31,10 @@ export default async function handler(req, res) {
 
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({ error: 'wrong password.' });
+
+  const lastLoginIp = getIP(req);
+  const lastLoginAt = new Date().toISOString();
+  await saveUser({ ...user, lastLoginIp, lastLoginAt });
 
   const isAdmin = checkIsAdmin(user.name);
   const token = signToken({ name: user.name, email: user.email, isAdmin });

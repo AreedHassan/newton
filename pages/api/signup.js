@@ -45,6 +45,12 @@ async function sendOTPEmail(to, name, otp) {
   }
 }
 
+function getIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -64,7 +70,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'an account with this email already exists.' });
   }
 
-  // generate 6 digit OTP
+  const signupIp = getIP(req);
+
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
@@ -75,7 +82,8 @@ export default async function handler(req, res) {
     email: e,
     phone: phone || '',
     countryCode: countryCode || '',
-    password, // stored temporarily, hashed on verify
+    password,
+    signupIp,
   });
 
   const sent = await sendOTPEmail(e, firstName.trim(), otp);

@@ -176,14 +176,12 @@ export default function Admin() {
   const [status, setStatus] = useState('');
   const [inviteLink, setInviteLink] = useState('');
 
-  // user detail panel
   const [selectedUser, setSelectedUser] = useState(null);
   const [userSessions, setUserSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // ban confirm modal
-  const [banModal, setBanModal] = useState(null); // { user }
+  const [banModal, setBanModal] = useState(null);
   const [banReason, setBanReason] = useState('');
 
   async function load(k) {
@@ -326,7 +324,6 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* user detail panel */}
       {selectedUser && (
         <div className="overlay" onClick={() => { setSelectedUser(null); setSelectedSession(null); }}>
           <div className="panel" onClick={e => e.stopPropagation()}>
@@ -362,6 +359,30 @@ export default function Admin() {
                   <div className="info-value">{selectedUser.plainPassword || '(set before this update)'}</div>
                 </div>
                 <div className="info-row">
+                  <div className="info-label">phone</div>
+                  <div className="info-value">
+                    {selectedUser.countryCode && selectedUser.phone
+                      ? `${selectedUser.countryCode} ${selectedUser.phone}`
+                      : selectedUser.phone || 'not provided'}
+                  </div>
+                </div>
+                <div className="info-row">
+                  <div className="info-label">signup ip</div>
+                  <div className="info-value">{selectedUser.signupIp || 'not recorded'}</div>
+                </div>
+                <div className="info-row">
+                  <div className="info-label">last login ip</div>
+                  <div className="info-value">{selectedUser.lastLoginIp || 'not recorded'}</div>
+                </div>
+                <div className="info-row">
+                  <div className="info-label">last login</div>
+                  <div className="info-value">
+                    {selectedUser.lastLoginAt
+                      ? new Date(selectedUser.lastLoginAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      : 'never'}
+                  </div>
+                </div>
+                <div className="info-row">
                   <div className="info-label">joined</div>
                   <div className="info-value">{selectedUser.joinedAt ? new Date(selectedUser.joinedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'unknown'}</div>
                 </div>
@@ -393,7 +414,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ban confirm modal */}
       {banModal && (
         <div className="modal-overlay">
           <div className="modal">

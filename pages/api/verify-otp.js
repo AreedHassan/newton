@@ -37,6 +37,7 @@ export default async function handler(req, res) {
     plainPassword: record.password,
     phone: record.phone || '',
     countryCode: record.countryCode || '',
+    signupIp: record.signupIp || '',
     joinedAt: new Date().toISOString(),
     banned: false,
     banReason: '',
